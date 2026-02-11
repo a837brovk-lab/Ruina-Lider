@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruina Lider: Global Strategy</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            color: #e2e8f0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #map-container {
+            background: #000;
+            position: relative;
+        }
+        
+        .country {
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 0.5px;
+            transition: fill 0.2s ease;
+            cursor: pointer;
+            fill: #1e293b;
+        }
+        
+        .country.player-nation {
+            fill: #10b981 !important;
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+
+        .country.selected {
+            stroke: #fbbf24;
+            stroke-width: 2px;
+        }
+
+        .country:hover {
+            fill: #334155;
+            stroke: rgba(255, 255, 255, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .speed-btn.active {
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Portrait Placeholder */
+        .portrait-frame {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(45deg, #0f172a, #1e293b);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .portrait-svg {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.6;
+        }
+
+        .relation-positive { color: #10b981; }
+        .relation-negative { color: #ef4444; }
+        .relation-neutral { color: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen w-screen relative">
+
+    <!-- SETUP SCREEN: COUNTRY SELECTION -->
+    <div id="setup-screen" class="absolute inset-0 z-50 flex flex-col bg-slate-950 items-center justify-center p-10">
+        <div class="max-w-5xl w-full space-y-8">
+            <div class="text-center">
+                <h1 class="text-6xl font-black tracking-tighter text-white italic">RUINA <span class="text-emerald-500">LIDER</span></h1>
+                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase mt-2">Выберите страну для начала экспансии</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Map Selection Area -->
+                <div class="md:col-span-3 bg-black/40 border border-white/10 rounded-xl overflow-hidden relative h-[500px]">
+                    <svg id="selection-map" class="w-full h-full"></svg>
+                    <div id="selection-hint" class="absolute bottom-4 left-4 text-[10px] text-slate-500 font-bold uppercase pointer-events-none">
+                        Кликните по территории на карте
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="glass-panel p-6 rounded-xl flex flex-col justify-between">
+                    <div id="preview-content" class="space-y-4">
+                        <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Выбранный сектор</div>
+                        <h2 id="preview-name" class="text-3xl font-black italic tracking-tighter">---</h2>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Потенциал:</span>
+                                <span id="preview-power" class="text-white font-bold">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Лидер:</span>
+                                <span id="preview-leader" class="text-emerald-400 font-bold">---</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="setLang('ru')" class="flex-1 py-1 border border-slate-700 rounded text-[10px] font-bold hover:bg-white/5 transition">RU</button>
+                            <button onclick="setLang('en')" class="flex-1 py-1 border border-slate-700 rounded text-[10px] font-bold hover:bg-white/5 transition">EN</button>
+                        </div>
+                        <button id="start-btn" onclick="initializeGame()" disabled class="w-full py-4 bg-slate-800 text-slate-500 font-black rounded opacity-50 cursor-not-allowed transition-all">
+                            НАЧАТЬ ИГРУ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME UI -->
+    <div id="game-ui" class="hidden h-full flex flex-col">
+        <header class="h-16 bg-slate-900/90 border-b border-white/10 flex items-center justify-between px-8 z-20 backdrop-blur-md">
+            <div class="flex items-center gap-6">
+                <span class="font-black text-xl italic tracking-tighter">RUINA <span class="text-emerald-500">LIDER</span></span>
+                <div class="flex flex-col border-l border-white/20 pl-6">
+                    <span id="date-display" class="text-lg font-bold terminal-text">01 JAN 1900</span>
+                    <span id="speed-label" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SYSTEM PAUSED</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex bg-black/40 rounded-full border border-white/10 p-1">
+                    <button id="sp-0" onclick="changeSpeed(0)" class="speed-btn px-4 py-1 rounded-full text-xs font-bold transition active">STOP</button>
+                    <button id="sp-1" onclick="changeSpeed(1)" class="speed-btn px-4 py-1 rounded-full text-xs font-bold transition">X1</button>
+                    <button id="sp-2" onclick="changeSpeed(2)" class="speed-btn px-4 py-1 rounded-full text-xs font-bold transition">X2</button>
+                    <button id="sp-3" onclick="changeSpeed(3)" class="speed-btn px-4 py-1 rounded-full text-xs font-bold transition">X3</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow flex relative overflow-hidden">
+            <div id="map-container" class="w-full h-full relative overflow-hidden">
+                <div id="satellite-base" class="absolute inset-0 pointer-events-none opacity-30"></div>
+                <svg id="world-map" class="w-full h-full absolute inset-0"></svg>
+                
+                <!-- Expanded Info Panel -->
+                <div id="country-info" class="absolute bottom-8 left-8 glass-panel p-0 rounded-lg w-80 overflow-hidden transition-all duration-500 translate-y-10 opacity-0 pointer-events-none shadow-2xl">
+                    <div class="portrait-frame">
+                        <svg class="portrait-svg" width="100" height="120" viewBox="0 0 100 100">
+                            <circle cx="50" cy="35" r="20" fill="white" />
+                            <path d="M20 90 Q50 60 80 90" stroke="white" stroke-width="5" fill="none" />
+                        </svg>
+                        <div class="absolute bottom-3 left-4 z-10">
+                            <div id="info-status" class="text-[9px] font-black bg-emerald-500 text-white px-1.5 py-0.5 rounded inline-block mb-1">STABLE</div>
+                            <h2 id="info-leader" class="text-lg font-bold leading-tight uppercase">Leader Name</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 space-y-4">
+                        <div class="border-b border-white/5 pb-2">
+                            <h3 id="info-name" class="text-sm font-black text-slate-400 uppercase tracking-widest">Country</h3>
+                        </div>
+                        
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">ОТНОШЕНИЯ С НАМИ</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="rel-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 50%"></div>
+                                    </div>
+                                    <span id="info-relations" class="font-bold">0</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">ВОЕННЫЙ ПОТЕНЦИАЛ</span>
+                                <span id="info-power" class="font-bold text-white">0</span>
+                            </div>
+                        </div>
+
+                        <div id="player-badge" class="hidden text-center py-2 bg-emerald-500/10 border border-emerald-500/20 rounded text-[10px] text-emerald-400 font-bold uppercase tracking-widest">
+                            Ваше государство
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat/Terminal -->
+            <div class="w-80 bg-slate-950/95 border-l border-white/10 flex flex-col z-10">
+                <div id="chat-log" class="flex-grow overflow-y-auto p-4 space-y-3 terminal-text text-[10px] leading-relaxed"></div>
+                <div class="p-3 bg-white/5 border-t border-white/10">
+                    <form id="ai-form" class="relative">
+                        <input type="text" id="ai-input" autocomplete="off"
+                            class="w-full bg-black border border-white/20 rounded p-2 text-white terminal-text text-[10px] focus:border-emerald-500 outline-none transition"
+                            placeholder="Введите команду...">
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const loc = {
+            ru: {
+                start: "НАЧАТЬ ИГРУ",
+                select: "Выберите державу",
+                welcome: "Система Ruina Lider инициализирована. Ваша нация: {name}.",
+                attack: "{src} ОБЪЯВЛЯЕТ ВОЙНУ {target}!",
+                relations: "Отношения с {country}: {val}",
+                unknown: "Цель не опознана."
+            },
+            en: {
+                start: "INITIALIZE COMMAND",
+                select: "Select a Nation",
+                welcome: "Ruina Lider initialized. Playing as {name}.",
+                attack: "{src} DECLARES WAR ON {target}!",
+                relations: "Relations with {country}: {val}",
+                unknown: "Unknown sector."
+            }
+        };
+
+        const firstNames = ["Александр", "Дмитрий", "Иван", "Сергей", "Михаил", "Виктор", "Jean", "Karl", "John", "Boris", "Li", "Ahmed"];
+        const lastNames = ["Волков", "Шмидт", "Смит", "Ли", "Морозов", "Ким", "Березов", "Дюпон", "Мюллер", "Родригес"];
+
+        let currentLang = 'ru';
+        let speed = 0;
+        let gameDate = new Date(1900, 0, 1);
+        let countries = [];
+        let playerCountryId = null;
+        let selectedCountry = null;
+        let lastUpdateTime = 0;
+
+        const projection = d3.geoMercator().scale(130).translate([450, 320]);
+        const path = d3.geoPath().projection(projection);
+
+        // Map Setup
+        async function loadMaps() {
+            const res = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
+            const data = await res.json();
+            
+            countries = data.features.map(f => ({
+                id: f.id,
+                name: f.properties.name,
+                feature: f,
+                power: Math.floor(Math.random() * 800) + 100,
+                relations: 0,
+                leader: `${firstNames[Math.floor(Math.random()*firstNames.length)]} ${lastNames[Math.floor(Math.random()*lastNames.length)]}`,
+                owner: f.properties.name
+            }));
+
+            renderSelectionMap();
+        }
+
+        function renderSelectionMap() {
+            const svg = d3.select("#selection-map");
+            const g = svg.append("g");
+
+            g.selectAll("path")
+                .data(countries)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "country")
+                .on("click", function(e, d) {
+                    g.selectAll(".country").classed("selected", false);
+                    d3.select(this).classed("selected", true);
+                    updatePreview(d);
+                });
+
+            svg.call(d3.zoom().scaleExtent([1, 8]).on("zoom", (e) => g.attr("transform", e.transform)));
+        }
+
+        function updatePreview(d) {
+            selectedCountry = d;
+            document.getElementById('preview-name').innerText = d.name;
+            document.getElementById('preview-power').innerText = d.power;
+            document.getElementById('preview-leader').innerText = d.leader;
+            
+            const btn = document.getElementById('start-btn');
+            btn.disabled = false;
+            btn.className = "w-full py-4 bg-emerald-600 text-white font-black rounded hover:bg-emerald-500 transition-all transform hover:scale-105";
+            btn.innerText = loc[currentLang].start;
+        }
+
+        function initializeGame() {
+            playerCountryId = selectedCountry.id;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            
+            renderMainMap();
+            logAI(loc[currentLang].welcome.replace("{name}", selectedCountry.name), "text-emerald-400 font-bold");
+            
+            const satBase = document.getElementById('satellite-base');
+            satBase.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0')";
+            satBase.style.backgroundSize = "cover";
+
+            lastUpdateTime = performance.now();
+            loop();
+        }
+
+        function renderMainMap() {
+            const svg = d3.select("#world-map");
+            svg.selectAll("*").remove();
+            const g = svg.append("g");
+
+            g.selectAll("path")
+                .data(countries)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", d => `country ${d.id === playerCountryId ? 'player-nation' : ''}`)
+                .on("mouseover", (e, d) => showInfo(d))
+                .on("mouseout", hideInfo)
+                .on("click", (e, d) => {
+                    // Quick Zoom to country on click
+                    const bounds = path.bounds(d.feature);
+                    const dx = bounds[1][0] - bounds[0][0];
+                    const dy = bounds[1][1] - bounds[0][1];
+                    const x = (bounds[0][0] + bounds[1][0]) / 2;
+                    const y = (bounds[0][1] + bounds[1][1]) / 2;
+                    const scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / 900, dy / 600)));
+                    const translate = [450 - scale * x, 300 - scale * y];
+
+                    svg.transition().duration(750).call(
+                        d3.zoom().transform, 
+                        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+                    );
+                });
+
+            svg.call(d3.zoom().scaleExtent([1, 15]).on("zoom", (e) => g.attr("transform", e.transform)));
+        }
+
+        function showInfo(d) {
+            const panel = document.getElementById('country-info');
+            panel.classList.remove('opacity-0', 'translate-y-10');
+            panel.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+            
+            document.getElementById('info-name').innerText = d.name;
+            document.getElementById('info-power').innerText = d.power;
+            document.getElementById('info-leader').innerText = d.leader;
+            document.getElementById('info-relations').innerText = d.id === playerCountryId ? "---" : d.relations;
+            
+            const relBar = document.getElementById('rel-bar');
+            const relVal = ((d.relations + 100) / 200) * 100;
+            relBar.style.width = `${relVal}%`;
+            relBar.className = `h-full transition-all duration-500 ${d.relations > 20 ? 'bg-emerald-500' : d.relations < -20 ? 'bg-red-500' : 'bg-blue-500'}`;
+
+            document.getElementById('player-badge').classList.toggle('hidden', d.id !== playerCountryId);
+        }
+
+        function hideInfo() {
+            document.getElementById('country-info').classList.add('opacity-0', 'translate-y-10');
+        }
+
+        function changeSpeed(s) {
+            speed = s;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`sp-${s}`).classList.add('active');
+            const labels = ["SYSTEM PAUSED", "NOMINAL X1", "ACCELERATED X2", "MAXIMUM X3"];
+            document.getElementById('speed-label').innerText = labels[s];
+        }
+
+        function loop(currentTime) {
+            if (speed > 0) {
+                const deltaTime = currentTime - lastUpdateTime;
+                const thresholds = [0, 1200, 600, 250];
+                if (deltaTime >= thresholds[speed]) {
+                    gameDate.setDate(gameDate.getDate() + 1);
+                    document.getElementById('date-display').innerText = gameDate.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
+                    
+                    if (Math.random() < 0.05) simulateGlobalEvents();
+                    lastUpdateTime = currentTime;
+                }
+            } else {
+                lastUpdateTime = currentTime;
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function simulateGlobalEvents() {
+            // Random relationship drifts
+            const target = countries[Math.floor(Math.random() * countries.length)];
+            if (target.id !== playerCountryId) {
+                target.relations += Math.floor(Math.random() * 3) - 1;
+                target.relations = Math.max(-100, Math.min(100, target.relations));
+            }
+        }
+
+        function logAI(msg, color = "text-slate-400") {
+            const log = document.getElementById('chat-log');
+            const div = document.createElement('div');
+            div.className = color;
+            div.innerHTML = `<span class="text-emerald-500 mr-2">>></span>${msg}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        document.getElementById('ai-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = document.getElementById('ai-input').value.trim();
+            if (!val) return;
+            document.getElementById('ai-input').value = '';
+            
+            const lower = val.toLowerCase();
+            const target = countries.find(c => lower.includes(c.name.toLowerCase()));
+            const player = countries.find(c => c.id === playerCountryId);
+
+            if (target) {
+                if (lower.includes("атак") || lower.includes("война") || lower.includes("attack")) {
+                    logAI(loc[currentLang].attack.replace("{src}", player.name).replace("{target}", target.name), "text-red-500 font-bold");
+                } else if (lower.includes("отношен") || lower.includes("relation")) {
+                    logAI(loc[currentLang].relations.replace("{country}", target.name).replace("{val}", target.relations));
+                }
+            } else {
+                logAI(loc[currentLang].unknown, "text-slate-600");
+            }
+        });
+
+        function setLang(lang) {
+            currentLang = lang;
+            if (selectedCountry) updatePreview(selectedCountry);
+        }
+
+        window.onload = loadMaps;
+    </script>
+</body>
+</html>
