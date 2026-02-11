@@ -1,1 +1,0 @@
-# Ruina-Lider
