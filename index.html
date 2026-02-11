@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Century of Crisis: Millennium Dawn</title>
+    <title>Century of Crisis: Millennium Dawn Redux</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js для графики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!-- TopoJSON для оптимизированной карты -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Roboto+Mono:wght@400;700&family=Special+Elite&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Roboto+Mono:wght@400;700&family=Special+Elite&family=Playfair+Display:wght@700&display=swap');
 
         :root {
-            --bg-dark: #0a0b0a;
-            --panel-bg: #1c1f1c;
-            --border-color: #2f332f;
-            --accent-gold: #c5a059;
+            --bg-dark: #050505;
+            --panel-bg: #141414;
+            --border-color: #333;
+            --accent-gold: #d4af37;
             --accent-red: #8a1c1c;
-            --accent-green: #3d6e38;
-            --text-main: #d1d5db;
+            --accent-green: #2d5228;
+            --text-main: #e5e5e5;
             --crt-scanline: rgba(0, 0, 0, 0.5);
         }
 
@@ -30,220 +35,237 @@
             user-select: none;
         }
 
-        /* --- CRT EFFECT & ATMOSPHERE --- */
+        /* --- ЭФФЕКТЫ МОНИТОРА (CRT) --- */
         .crt-overlay {
             position: fixed; inset: 0; pointer-events: none; z-index: 9000;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
                         linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
             background-size: 100% 3px, 3px 100%;
-            opacity: 0.6;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            opacity: 0.4;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
         }
 
         .scanline {
             width: 100%; height: 5px;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.03);
             position: absolute; top: 0; left: 0;
-            animation: scan 6s linear infinite;
+            animation: scan 8s linear infinite;
             pointer-events: none; z-index: 9001;
         }
 
         @keyframes scan { 0% {top: -5%;} 100% {top: 105%;} }
 
-        /* --- UI COMPONENTS --- */
+        /* --- ИНТЕРФЕЙС (UI) --- */
         .iron-panel {
-            background: var(--panel-bg);
-            border: 2px solid #000;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);
+            background: #1a1a1a;
+            background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23222222' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
+            border: 1px solid #444;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
             position: relative;
         }
-        .iron-panel::before {
-            content: ''; position: absolute; inset: 0;
-            border: 1px solid var(--border-color);
-            pointer-events: none;
-        }
-
-        .header-font { font-family: 'Black Ops One', cursive; letter-spacing: 1px; }
+        
+        .header-font { font-family: 'Black Ops One', cursive; letter-spacing: 1.5px; }
         .typewriter { font-family: 'Special Elite', cursive; }
+        .serif-font { font-family: 'Playfair Display', serif; }
 
+        /* Кнопки */
         .btn-main {
-            background: linear-gradient(180deg, #3d423d 0%, #222622 100%);
+            background: linear-gradient(180deg, #2a2a2a 0%, #111 100%);
             border: 1px solid #555;
             color: #ccc;
             text-transform: uppercase;
             font-weight: bold;
-            text-shadow: 1px 1px 0 #000;
-            transition: all 0.1s;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            transition: all 0.2s;
             position: relative;
             overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
         }
         .btn-main:hover:not(:disabled) {
-            filter: brightness(1.2); border-color: #888; color: #fff;
+            border-color: var(--accent-gold); color: #fff;
+            background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
         }
-        .btn-main:active:not(:disabled) {
-            transform: translateY(2px); box-shadow: inset 0 2px 5px #000;
-        }
-        .btn-main:disabled {
-            opacity: 0.5; cursor: not-allowed; filter: grayscale(1);
-        }
+        .btn-main:active:not(:disabled) { transform: translateY(1px); }
+        .btn-main:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
         
-        .btn-war { background: linear-gradient(180deg, #5c1818 0%, #360a0a 100%); border-color: #8a3636; }
-        .btn-diplo { background: linear-gradient(180deg, #2b4561 0%, #152333 100%); border-color: #43668c; }
-        .btn-green { background: linear-gradient(180deg, #2d5228 0%, #172b14 100%); border-color: #4a8043; }
+        .btn-war { border-color: #8a1c1c; color: #ffcccc; background: linear-gradient(180deg, #3d0e0e 0%, #1f0505 100%); }
+        .btn-war:hover:not(:disabled) { box-shadow: 0 0 15px rgba(138, 28, 28, 0.4); border-color: #ff4444; }
 
-        /* --- MAP STYLES --- */
+        .btn-diplo { border-color: #2b4561; color: #ccdeff; background: linear-gradient(180deg, #0e1d2e 0%, #050b14 100%); }
+        
+        /* --- КАРТА --- */
         .province {
-            stroke: rgba(0,0,0,0.3); stroke-width: 0.5;
-            transition: fill 0.3s;
+            stroke: rgba(255,255,255,0.1); stroke-width: 0.3;
+            fill: #1f2225; transition: fill 0.4s ease, stroke 0.2s;
         }
         .province:hover {
-            filter: brightness(1.2) sepia(0.2); stroke: #fff; stroke-width: 1.5; cursor: pointer;
+            stroke: #fff; stroke-width: 1.0; cursor: pointer; fill: #333;
         }
-        .province.selected {
-            stroke: var(--accent-gold); stroke-width: 2.5; filter: brightness(1.1);
+        /* Цвета для карты назначаются через D3 */
+
+        /* Анимация границы войны */
+        @keyframes war-pulse { 
+            0% { stroke: var(--accent-red); stroke-width: 1; stroke-opacity: 0.5; } 
+            50% { stroke: #ff4444; stroke-width: 2; stroke-opacity: 1; } 
+            100% { stroke: var(--accent-red); stroke-width: 1; stroke-opacity: 0.5; } 
         }
-        .province.player {
-            stroke: var(--accent-green); stroke-width: 2;
-        }
-        .province.enemy {
-            fill: url(#diagonal-hatch) var(--accent-red); /* Pattern defined in SVG */
-        }
-        
-        /* --- WAR VISUALS --- */
-        @keyframes war-flash { 0% {opacity:0.6;} 50% {opacity:1;} 100% {opacity:0.6;} }
         .war-active-border {
-            stroke: var(--accent-red); stroke-width: 2; stroke-dasharray: 5,3;
-            animation: war-flash 1s infinite;
+            animation: war-pulse 1.5s infinite;
+            stroke-dasharray: 4 2;
         }
 
-        /* --- MODALS --- */
+        /* --- МОДАЛЬНЫЕ ОКНА --- */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
             display: flex; align-items: center; justify-content: center;
-            z-index: 5000; backdrop-filter: blur(5px);
+            z-index: 5000; backdrop-filter: blur(8px);
         }
         .modal-content {
-            width: 600px; max-width: 90vw;
-            background: #1a1a1a; border: 4px solid #333;
-            box-shadow: 0 0 50px rgba(0,0,0,1);
-            position: relative;
+            background: #111; border: 1px solid #444;
+            box-shadow: 0 0 60px rgba(0,0,0,1);
+            display: flex; flex-direction: column;
         }
         .modal-header {
-            background: #000; color: #fff; padding: 10px 20px;
-            font-family: 'Black Ops One'; font-size: 1.2rem; border-bottom: 2px solid var(--accent-gold);
+            background: linear-gradient(90deg, #000, #111);
+            color: var(--accent-gold); padding: 12px 20px;
+            font-family: 'Black Ops One'; font-size: 1.4rem;
+            border-bottom: 1px solid #333; display: flex; justify-content: space-between;
         }
 
-        /* --- PROGRESS BARS --- */
-        .progress-container {
-            width: 100%; height: 12px; background: #111; border: 1px solid #444; position: relative;
+        /* --- ПРОГРЕСС БАРЫ --- */
+        .progress-track {
+            width: 100%; height: 8px; background: #000; border: 1px solid #333; margin-top: 4px;
         }
         .progress-fill {
-            height: 100%; background: repeating-linear-gradient(45deg, #b8860b, #b8860b 10px, #8b6508 10px, #8b6508 20px);
-            transition: width 0.5s linear;
+            height: 100%; background: var(--accent-gold);
+            width: 0%; transition: width 0.3s;
         }
-        .war-fill {
-            background: repeating-linear-gradient(45deg, #8b0000, #8b0000 10px, #5c0000 10px, #5c0000 20px);
-        }
+        .fill-red { background: var(--accent-red); }
+        .fill-green { background: var(--accent-green); }
 
-        /* --- CUSTOM SCROLLBAR --- */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #444; border: 1px solid #000; }
-        ::-webkit-scrollbar-thumb:hover { background: #666; }
-
-        /* --- NEWS TICKER --- */
-        .news-ticker-container {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 30px;
-            background: #000; border-top: 2px solid var(--accent-gold);
+        /* --- НОВОСТНАЯ ЛЕНТА --- */
+        .news-ticker {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 28px;
+            background: #000; border-top: 1px solid #333;
             overflow: hidden; display: flex; align-items: center; z-index: 100;
         }
-        .news-content {
+        .news-item {
             white-space: nowrap; padding-left: 100%;
-            animation: ticker 30s linear infinite;
-            font-family: 'Special Elite'; font-size: 14px; color: var(--accent-gold);
+            animation: ticker 25s linear infinite;
+            font-family: 'Special Elite'; font-size: 12px; color: #aaa;
         }
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
+        /* --- ИКОНКИ ЛИДЕРОВ --- */
+        .leader-portrait {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: sepia(0.2) contrast(1.1);
+        }
+        .leader-placeholder {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: #222; color: #444; font-size: 2rem;
+        }
+
+        /* Табы */
+        .tab-btn {
+            flex: 1; padding: 10px; background: #111; color: #666;
+            border: none; border-bottom: 2px solid #222;
+            cursor: pointer; font-weight: bold; font-size: 0.7rem; uppercase;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--text-main); background: #1a1a1a; border-bottom-color: var(--accent-gold);
+        }
     </style>
 </head>
 <body>
 
+    <!-- ЭФФЕКТЫ -->
     <div class="crt-overlay"></div>
     <div class="scanline"></div>
 
-    <!-- SVG PATTERNS DEFINITION -->
-    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1">
+    <!-- SVG ПАТТЕРНЫ (ШТРИХОВКА) -->
+    <svg style="position: absolute; width: 0; height: 0;" version="1.1">
         <defs>
-            <pattern id="diagonal-hatch" patternUnits="userSpaceOnUse" width="8" height="8">
-                <path d="M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4" 
-                      style="stroke:#8a1c1c; stroke-width:2; opacity: 0.5" />
+            <pattern id="hatch-war" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+                <rect width="4" height="8" transform="translate(0,0)" fill="#8a1c1c" opacity="0.3"></rect>
             </pattern>
-            <pattern id="occupied-hatch" patternUnits="userSpaceOnUse" width="10" height="10">
-                <rect width="10" height="10" fill="#2d5228" opacity="0.3"/>
-                <path d="M-2,2 l4,-4 M0,10 l10,-10 M8,12 l4,-4" 
-                      style="stroke:#4a8043; stroke-width:2; opacity: 0.5" />
+            <pattern id="hatch-occupied" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(-45)">
+                <rect width="4" height="8" transform="translate(0,0)" fill="#2d5228" opacity="0.4"></rect>
             </pattern>
         </defs>
     </svg>
 
-    <!-- LOADING / SELECTION SCREEN -->
+    <!-- ЭКРАН ВЫБОРА СТРАНЫ -->
     <div id="selection-screen" class="modal-overlay">
-        <div class="modal-content" style="width: 800px; height: 600px; display: flex; flex-direction: column;">
-            <div class="modal-header flex justify-between">
-                <span>ВЫБОР НАЦИИ - СЦЕНАРИЙ 2000 ГОДА</span>
-                <span class="text-xs self-center text-gray-400">ВЕРСИЯ 4.2.0</span>
+        <div class="modal-content" style="width: 900px; height: 650px;">
+            <div class="modal-header">
+                <span>ГЕОПОЛИТИЧЕСКИЙ СИМУЛЯТОР: 2000</span>
+                <span class="text-xs text-gray-500 font-mono mt-2">SYS.VER.5.0</span>
             </div>
             
-            <div class="flex flex-grow bg-gray-900 overflow-hidden">
-                <!-- Left: List -->
-                <div class="w-1/3 bg-black border-r border-gray-700 flex flex-col">
-                    <div class="p-2 bg-gray-800 text-xs font-bold text-center border-b border-gray-600">ДОСТУПНЫЕ ДЕРЖАВЫ</div>
+            <div class="flex flex-grow overflow-hidden">
+                <!-- Список стран -->
+                <div class="w-1/3 bg-black border-r border-gray-800 flex flex-col">
+                    <div class="p-3 bg-gray-900 text-[10px] font-bold text-center border-b border-gray-700 text-gray-400">ВЫБЕРИТЕ ДЕРЖАВУ</div>
                     <div id="country-list" class="flex-grow overflow-y-auto p-2 space-y-1">
-                        <!-- JS injected buttons -->
+                        <!-- JS GENERATED -->
                     </div>
                 </div>
                 
-                <!-- Right: Details -->
-                <div class="w-2/3 p-6 flex flex-col gap-4 relative">
-                    <div id="select-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-500 italic opacity-50 text-center p-10">
-                        Выберите страну из списка слева,<br>чтобы просмотреть досье разведки.
+                <!-- Детали -->
+                <div class="w-2/3 bg-[#111] p-8 flex flex-col relative">
+                    <!-- Заглушка -->
+                    <div id="select-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 opacity-60">
+                        <svg class="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.945M8 3.935A9 9 0 0116.5 19.065m-7.465-15.13a9 9 0 01-12.47 12.47"></path></svg>
+                        <p class="text-sm font-mono uppercase">Ожидание выбора субъекта...</p>
                     </div>
 
-                    <div id="select-details" class="hidden flex flex-col h-full">
-                        <div class="flex items-center gap-4 mb-4 border-b border-gray-700 pb-4">
-                            <div id="sel-flag" class="w-24 h-16 bg-gray-700 border-2 border-white shadow-lg flex items-center justify-center text-2xl font-bold text-white/20">FLAG</div>
+                    <!-- Информация о выбранной стране -->
+                    <div id="select-details" class="hidden flex flex-col h-full animate-fade-in">
+                        <div class="flex justify-between items-start border-b border-gray-700 pb-6 mb-6">
                             <div>
-                                <h2 id="sel-name" class="text-3xl font-black text-white uppercase leading-none">RUSSIA</h2>
-                                <div id="sel-ideology" class="text-xs text-blue-400 font-bold mt-1">АВТОРИТАРИЗМ</div>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-800 p-4 border border-gray-600 rounded mb-4">
-                            <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-2">ГЛАВА ГОСУДАРСТВА (2000)</div>
-                            <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-500">
-                                    <svg class="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-                                </div>
-                                <div>
-                                    <div id="sel-leader" class="text-xl font-bold text-yellow-500">Vladimir Putin</div>
-                                    <div class="text-xs text-gray-400 italic">"Власть - это долг."</div>
+                                <h1 id="sel-name" class="text-5xl font-black text-white uppercase tracking-tighter leading-none mb-2">RUSSIA</h1>
+                                <div class="flex items-center gap-2">
+                                    <span id="sel-ideology" class="px-2 py-1 bg-gray-800 text-xs font-bold text-blue-400 border border-gray-600 rounded">АВТОРИТАРИЗМ</span>
+                                    <span class="text-xs text-gray-500">СЦЕНАРИЙ: МИЛЛЕНИУМ</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4 mb-auto">
-                            <div class="bg-black/40 p-2 border border-gray-700">
-                                <div class="text-[9px] text-gray-500 uppercase">ВВП</div>
-                                <div id="sel-gdp" class="text-lg font-mono text-green-400">$2.1T</div>
-                            </div>
-                            <div class="bg-black/40 p-2 border border-gray-700">
-                                <div class="text-[9px] text-gray-500 uppercase">АРМИЯ</div>
-                                <div id="sel-army" class="text-lg font-mono text-red-400">1.2M</div>
+                            <div class="text-right">
+                                <div id="sel-flag" class="w-20 h-14 bg-gray-700 border border-white/20 shadow-xl"></div>
                             </div>
                         </div>
 
-                        <button onclick="startGame()" class="w-full py-4 btn-main text-lg tracking-widest border-2 border-yellow-600 text-yellow-500 hover:text-white">
-                            ПРИНЯТЬ УПРАВЛЕНИЕ
+                        <div class="flex gap-6 mb-6">
+                            <div class="w-32 h-40 bg-gray-800 border border-gray-600 shadow-inner flex-shrink-0 relative overflow-hidden">
+                                <img id="sel-leader-img" src="" class="leader-portrait hidden" alt="Leader">
+                                <div id="sel-leader-placeholder" class="leader-placeholder">?</div>
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">ГЛАВА ГОСУДАРСТВА</div>
+                                <div id="sel-leader-name" class="text-2xl font-bold text-yellow-500 serif-font">Vladimir Putin</div>
+                                <div id="sel-leader-desc" class="text-xs text-gray-400 mt-2 italic border-l-2 border-gray-700 pl-3">
+                                    "Вступая в должность, лидер обещает укрепить вертикаль власти."
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mt-auto">
+                            <div class="p-3 bg-gray-900 border border-gray-700">
+                                <div class="text-[9px] text-gray-500 uppercase">ЭКОНОМИКА (ВВП)</div>
+                                <div id="sel-gdp" class="text-xl font-mono text-green-500">$260B</div>
+                            </div>
+                            <div class="p-3 bg-gray-900 border border-gray-700">
+                                <div class="text-[9px] text-gray-500 uppercase">ВООРУЖЕННЫЕ СИЛЫ</div>
+                                <div id="sel-army" class="text-xl font-mono text-red-500">1.05M</div>
+                            </div>
+                        </div>
+
+                        <button onclick="startGame()" class="mt-6 w-full py-4 btn-main text-lg border-yellow-600/50 text-yellow-500 hover:text-white hover:border-yellow-500">
+                            НАЧАТЬ КАМПАНИЮ
                         </button>
                     </div>
                 </div>
@@ -251,286 +273,350 @@
         </div>
     </div>
 
-    <!-- MAIN GAME UI -->
-    <div id="game-ui" class="hidden h-screen flex flex-col relative">
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС ИГРЫ -->
+    <div id="game-ui" class="hidden h-screen flex flex-col">
         
-        <!-- TOP HEADER -->
-        <header class="h-16 iron-panel flex items-center justify-between px-4 z-50">
-            <!-- Left: Flag & Stats -->
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+        <header class="h-14 iron-panel flex items-center justify-between px-4 z-50 border-b border-gray-800">
+            <!-- Инфо игрока -->
             <div class="flex items-center gap-6">
-                <div class="flex items-center gap-3">
-                    <div id="game-flag" class="w-12 h-8 bg-gray-800 border border-white/30 shadow-md"></div>
-                    <div class="leading-none">
-                        <div id="game-country" class="text-lg header-font text-white">RUSSIA</div>
-                        <div id="game-leader" class="text-xs text-yellow-600 font-bold uppercase typewriter">V. PUTIN</div>
+                <div class="flex items-center gap-3 pr-6 border-r border-gray-700">
+                    <div id="game-flag" class="w-10 h-6 bg-gray-700 border border-white/20"></div>
+                    <div>
+                        <div id="game-country" class="text-sm font-bold leading-none uppercase text-white">RUSSIA</div>
+                        <div id="game-leader" class="text-[10px] text-yellow-600 font-bold uppercase mt-0.5">V. PUTIN</div>
                     </div>
                 </div>
 
-                <div class="h-8 w-px bg-white/10 mx-2"></div>
-
-                <div class="flex gap-6">
-                    <div title="Политическая власть">
-                        <span class="text-[9px] block text-gray-500 uppercase">П. Власть</span>
-                        <div class="flex items-center gap-1 text-white font-mono text-sm">
-                            <span class="text-gray-400">🏛</span> <span id="res-pp">250</span>
-                        </div>
+                <!-- Ресурсы -->
+                <div class="flex gap-6 text-xs font-mono">
+                    <div title="Политическая Власть">
+                        <span class="text-gray-500 text-[9px] uppercase block">П. Власть</span>
+                        <span class="text-gray-300">🏛</span> <span id="res-pp" class="text-white font-bold">150</span>
                     </div>
                     <div title="Стабильность">
-                        <span class="text-[9px] block text-gray-500 uppercase">Стабильность</span>
-                        <div class="flex items-center gap-1 text-white font-mono text-sm">
-                            <span class="text-yellow-600">⚖</span> <span id="res-stab">80%</span>
-                        </div>
+                        <span class="text-gray-500 text-[9px] uppercase block">Стаб.</span>
+                        <span class="text-yellow-600">⚖</span> <span id="res-stab" class="text-white font-bold">65%</span>
                     </div>
-                    <div title="Мировая Напряженность">
-                        <span class="text-[9px] block text-gray-500 uppercase">Напряжение</span>
-                        <div class="flex items-center gap-1 text-white font-mono text-sm relative group">
-                            <span class="text-red-600 animate-pulse">☢</span> 
-                            <span id="res-tension">12%</span>
-                        </div>
+                    <div title="Бюджет">
+                        <span class="text-gray-500 text-[9px] uppercase block">Бюджет</span>
+                        <span class="text-green-500">$</span> <span id="res-money" class="text-white font-bold">50B</span>
+                    </div>
+                    <div title="Мировое Напряжение">
+                        <span class="text-gray-500 text-[9px] uppercase block">Угроза</span>
+                        <span class="text-red-600 animate-pulse">☢</span> <span id="res-tension" class="text-white font-bold">12%</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Center: Date -->
-            <div class="absolute left-1/2 -translate-x-1/2 top-0 h-full flex flex-col justify-center items-center bg-black/40 px-6 border-x border-white/5">
-                <div id="date-display" class="text-2xl header-font text-gray-200 tracking-wider">01 JAN 2000</div>
-                <div class="flex gap-1 mt-1">
-                    <button onclick="setSpeed(0)" class="w-6 h-4 flex items-center justify-center bg-gray-800 text-[8px] hover:bg-gray-700">||</button>
-                    <button onclick="setSpeed(1)" class="w-6 h-4 flex items-center justify-center bg-gray-800 text-[8px] hover:bg-gray-700">></button>
-                    <button onclick="setSpeed(3)" class="w-6 h-4 flex items-center justify-center bg-gray-800 text-[8px] hover:bg-gray-700">>></button>
+            <!-- Время -->
+            <div class="absolute left-1/2 -translate-x-1/2 top-0 h-full flex flex-col justify-center items-center">
+                <div class="bg-black/60 px-6 py-1 border-x border-gray-800 text-center">
+                    <div id="date-display" class="text-xl header-font text-gray-200 tracking-wider">01 ЯНВ 2000</div>
+                    <div class="flex justify-center gap-1 mt-0.5">
+                        <button onclick="setSpeed(0)" class="text-[9px] px-2 bg-gray-800 hover:bg-gray-700 text-gray-300">||</button>
+                        <button onclick="setSpeed(1)" class="text-[9px] px-2 bg-gray-800 hover:bg-gray-700 text-gray-300">></button>
+                        <button onclick="setSpeed(2)" class="text-[9px] px-2 bg-gray-800 hover:bg-gray-700 text-yellow-500">>></button>
+                        <button onclick="setSpeed(3)" class="text-[9px] px-2 bg-gray-800 hover:bg-gray-700 text-red-500">>>></button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right: Menu -->
+            <!-- Меню -->
             <div>
-                <button class="btn-main px-4 py-2 text-xs">МЕНЮ</button>
+                <button class="btn-main px-3 py-1 text-[10px]">НАСТРОЙКИ</button>
             </div>
         </header>
 
-        <!-- MAIN AREA -->
-        <div class="flex-grow relative bg-[#0e1114] overflow-hidden">
-            <svg id="game-map" class="w-full h-full cursor-crosshair"></svg>
+        <!-- РАБОЧАЯ ОБЛАСТЬ -->
+        <div class="flex-grow flex relative overflow-hidden">
             
-            <!-- Map Overlay UI: Target Info -->
-            <div id="target-panel" class="absolute top-4 right-4 w-80 iron-panel hidden flex-col z-40 transition-transform">
-                <div class="bg-black p-2 border-b border-gray-700 flex justify-between items-center">
-                    <span id="tg-name" class="header-font text-xl text-white ml-2">GERMANY</span>
-                    <button onclick="closeTarget()" class="text-red-500 hover:text-white px-2">✕</button>
-                </div>
+            <!-- КАРТА -->
+            <div id="map-container" class="flex-grow bg-[#0b0d10] relative">
+                <svg id="game-map" class="w-full h-full cursor-crosshair"></svg>
                 
-                <div class="p-4 space-y-4">
-                    <!-- Status -->
-                    <div class="flex items-center gap-4">
-                        <div class="w-16 h-16 bg-gray-800 border border-gray-600 rounded-full overflow-hidden relative">
-                            <div class="absolute inset-0 flex items-center justify-center text-3xl">👤</div>
-                        </div>
-                        <div>
-                            <div class="text-[10px] uppercase text-gray-500 font-bold">Лидер</div>
-                            <div id="tg-leader" class="text-sm font-bold text-white">G. SCHROEDER</div>
-                            <div id="tg-ideology" class="text-[10px] text-blue-400 mt-1">ДЕМОКРАТИЯ</div>
-                        </div>
+                <!-- Уведомления карты -->
+                <div id="map-notifications" class="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col gap-2 pointer-events-none"></div>
+            </div>
+
+            <!-- ПРАВАЯ ПАНЕЛЬ (ВЗАИМОДЕЙСТВИЕ) -->
+            <div id="side-panel" class="w-96 iron-panel border-l border-gray-800 flex flex-col z-40 transition-transform transform translate-x-0">
+                
+                <!-- Заголовок панели -->
+                <div class="h-12 bg-black border-b border-gray-700 flex items-center justify-between px-4">
+                    <span id="panel-title" class="font-bold text-gray-300 uppercase tracking-widest">ОБЗОР СТРАНЫ</span>
+                    <button onclick="closeSidePanel()" class="text-gray-500 hover:text-white">✕</button>
+                </div>
+
+                <!-- Контент панели -->
+                <div id="panel-content" class="flex-grow overflow-y-auto p-4 space-y-4">
+                    <!-- Заглушка если ничего не выбрано -->
+                    <div id="panel-empty" class="text-center text-gray-600 mt-10">
+                        <p>Нажмите на страну на карте<br>для взаимодействия.</p>
                     </div>
 
-                    <!-- Relations -->
-                    <div class="bg-black/30 p-2 border border-white/5">
-                        <div class="flex justify-between text-[10px] mb-1">
-                            <span class="text-gray-500 uppercase">МНЕНИЕ О НАС</span>
-                            <span id="tg-rel" class="font-bold text-green-500">+20</span>
+                    <!-- Информация о цели -->
+                    <div id="target-info" class="hidden animate-fade-in">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h2 id="tg-name" class="text-2xl font-black text-white uppercase leading-none">GERMANY</h2>
+                                <div id="tg-ideology" class="text-[10px] font-bold text-blue-400 mt-1 uppercase">ДЕМОКРАТИЯ</div>
+                            </div>
+                            <div id="tg-flag" class="w-12 h-8 bg-gray-700"></div>
                         </div>
-                        <div class="w-full h-1 bg-gray-700">
-                            <div id="tg-rel-bar" class="h-full bg-green-500 w-1/2 transition-all"></div>
-                        </div>
-                    </div>
 
-                    <!-- War Justification UI -->
-                    <div id="war-section" class="border-t border-white/10 pt-2">
-                        <!-- State: Idle -->
-                        <div id="war-idle" class="space-y-2">
-                            <button onclick="startJustify()" class="w-full py-2 btn-main btn-war text-xs tracking-wider">
-                                ОПРАВДАТЬ ЦЕЛЬ ВОЙНЫ
-                            </button>
-                            <div class="text-[9px] text-center text-gray-500">
-                                Требуется: 50 PP • Время: 30 дней
+                        <!-- Лидер -->
+                        <div class="bg-gray-800/50 p-2 border border-gray-700 flex gap-3 mb-4">
+                            <div class="w-12 h-14 bg-gray-900 border border-gray-600 flex-shrink-0 overflow-hidden">
+                                <img id="tg-leader-img" class="w-full h-full object-cover hidden" src="">
+                                <div id="tg-leader-ph" class="w-full h-full flex items-center justify-center text-gray-500 text-xs">?</div>
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <span class="text-[9px] text-gray-500 uppercase">Глава Государства</span>
+                                <span id="tg-leader" class="font-bold text-sm text-yellow-500 leading-tight">Name</span>
                             </div>
                         </div>
 
-                        <!-- State: Justifying -->
-                        <div id="war-progress" class="hidden space-y-2">
-                            <div class="flex justify-between text-[10px] text-yellow-500 font-bold">
-                                <span>ФАБРИКАЦИЯ...</span>
-                                <span id="justify-timer">29 дн.</span>
+                        <!-- Отношения -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                                <span>ОТНОШЕНИЯ</span>
+                                <span id="tg-rel-val" class="font-bold text-white">0</span>
                             </div>
-                            <div class="progress-container">
-                                <div id="justify-bar" class="progress-fill w-0"></div>
+                            <div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                <div id="tg-rel-bar" class="h-full bg-gray-500 w-1/2 transition-all duration-500"></div>
                             </div>
-                            <button onclick="cancelJustify()" class="w-full py-1 btn-main text-[10px] text-gray-400">ОТМЕНА</button>
                         </div>
 
-                        <!-- State: Ready -->
-                        <div id="war-ready" class="hidden space-y-2 animate-pulse">
-                            <div class="text-center text-xs text-red-500 font-bold border border-red-900 bg-red-900/20 p-1">
-                                CASUS BELLI ГОТОВ
+                        <!-- Статистика -->
+                        <div class="grid grid-cols-2 gap-2 mb-6">
+                            <div class="bg-black/30 p-2 border border-gray-800 text-center">
+                                <div class="text-[8px] text-gray-500 uppercase">ДИВИЗИИ</div>
+                                <div id="tg-army" class="font-mono font-bold text-sm">~100K</div>
                             </div>
-                            <button onclick="declareWar()" class="w-full py-3 btn-main btn-war text-sm font-bold border-2 border-red-500 text-red-100 hover:text-white">
-                                ОБЪЯВИТЬ ВОЙНУ
-                            </button>
+                            <div class="bg-black/30 p-2 border border-gray-800 text-center">
+                                <div class="text-[8px] text-gray-500 uppercase">ИНДУСТРИЯ</div>
+                                <div id="tg-ind" class="font-mono font-bold text-sm">54 фб.</div>
+                            </div>
                         </div>
 
-                         <!-- State: At War -->
-                         <div id="war-active" class="hidden space-y-2">
-                            <div class="bg-red-900/30 border border-red-600 p-2 text-center">
-                                <div class="text-xs font-black text-red-500 tracking-widest mb-1">ВОЙНА</div>
-                                <div class="text-[10px] text-gray-300">ПРОГРЕСС ЗАХВАТА</div>
-                                <div class="progress-container mt-1 h-4 border-red-800 bg-black">
-                                    <div id="conquest-bar" class="progress-fill war-fill" style="width: 0%"></div>
+                        <!-- Действия -->
+                        <div class="space-y-3">
+                            <div id="war-module" class="border-t border-gray-700 pt-3">
+                                <div class="text-[10px] font-bold text-red-500 uppercase mb-2">ВОЕННЫЕ ДЕЙСТВИЯ</div>
+                                
+                                <!-- Кнопка оправдания -->
+                                <button id="btn-justify" onclick="startJustify()" class="w-full py-2 btn-main btn-war text-xs mb-2">
+                                    ОПРАВДАТЬ ЦЕЛЬ ВОЙНЫ (50 PP)
+                                </button>
+                                
+                                <!-- Прогресс оправдания -->
+                                <div id="justify-progress" class="hidden mb-2">
+                                    <div class="flex justify-between text-[9px] text-yellow-500 mb-1">
+                                        <span>ФАБРИКАЦИЯ CASUS BELLI...</span>
+                                        <span id="justify-time">30 дн.</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div id="justify-bar" class="progress-fill"></div>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between text-[9px] mt-1 font-mono">
-                                    <span id="war-score">0%</span>
-                                    <span>КАПИТУЛЯЦИЯ</span>
+
+                                <!-- Кнопка войны -->
+                                <button id="btn-declare-war" onclick="declareWar()" class="hidden w-full py-3 btn-main bg-red-900 border-red-500 text-white font-bold text-sm animate-pulse">
+                                    ОБЪЯВИТЬ ВОЙНУ
+                                </button>
+
+                                <!-- Активная война -->
+                                <div id="active-war-stats" class="hidden bg-red-900/20 border border-red-900 p-2 text-center">
+                                    <span class="text-xs font-bold text-red-400">ИДЕТ ВОЙНА</span>
+                                    <div class="progress-track mt-1 bg-black border-red-800">
+                                        <div id="war-progress-bar" class="progress-fill fill-red" style="width: 0%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-[9px] mt-1 text-gray-400 font-mono">
+                                        <span>ОККУПАЦИЯ</span>
+                                        <span id="war-score">0%</span>
+                                    </div>
                                 </div>
                             </div>
-                         </div>
-                    </div>
 
-                    <!-- Normal Diplo -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="py-2 btn-main btn-diplo text-[10px]">Улучшить отн.</button>
-                        <button class="py-2 btn-main text-[10px]">Торговля</button>
+                            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-700">
+                                <button class="py-2 btn-main btn-diplo text-[10px]">УЛУЧШИТЬ ОТН.</button>
+                                <button class="py-2 btn-main text-[10px]">АЛЬЯНС</button>
+                                <button class="py-2 btn-main text-[10px]">ТОРГОВЛЯ</button>
+                                <button class="py-2 btn-main text-[10px]">ШПИОНАЖ</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- EVENT POPUP -->
-            <div id="event-modal" class="modal-overlay hidden">
-                <div class="modal-content" style="width: 500px; border-color: #8a3636;">
-                    <div class="modal-header bg-red-900/20 text-red-500 border-red-800">
-                        СРОЧНОЕ СООБЩЕНИЕ
-                    </div>
-                    <div class="p-6 bg-black flex gap-6">
-                        <div class="w-1/3">
-                            <div class="w-full h-32 bg-gray-800 border border-gray-600 flex items-center justify-center text-4xl">
-                                ⚠
-                            </div>
-                        </div>
-                        <div class="w-2/3">
-                            <h3 id="ev-title" class="text-xl font-bold text-white mb-2 typewriter">ТЕРАКТ В СТОЛИЦЕ</h3>
-                            <p id="ev-desc" class="text-xs text-gray-400 leading-relaxed mb-4 typewriter">
-                                Группа экстремистов совершила атаку. Погибли гражданские. Стабильность падает.
-                            </p>
-                            <div id="ev-options" class="space-y-2">
-                                <!-- Options injected here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
-        <!-- BOTTOM TICKER -->
-        <div class="news-ticker-container">
-            <div class="bg-red-900 text-white px-4 text-xs font-bold h-full flex items-center z-20 shadow-lg">МИРОВЫЕ НОВОСТИ</div>
-            <div id="news-feed" class="news-content">
-                +++ 2000 ГОД НАСТУПИЛ +++ МИР В ОЖИДАНИИ ПЕРЕМЕН +++ ЭКОНОМИКА РАСТЕТ +++
+        <!-- НОВОСТНАЯ ЛЕНТА -->
+        <div class="news-ticker">
+            <div class="bg-red-900 text-white px-3 text-[10px] font-bold h-full flex items-center z-10 shadow-lg">МИРОВЫЕ НОВОСТИ</div>
+            <div id="news-feed" class="news-item">
+                +++ 2000 ГОД НАСТУПИЛ +++ МИЛЛЕНИУМ: МИР В ОЖИДАНИИ ПЕРЕМЕН +++ НЕФТЯНЫЕ КОТИРОВКИ РАСТУТ +++
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО СОБЫТИЙ -->
+    <div id="event-modal" class="modal-overlay hidden">
+        <div class="modal-content w-[500px]">
+            <div class="modal-header border-b-0">
+                <span class="text-red-500">СРОЧНОЕ СООБЩЕНИЕ</span>
+            </div>
+            <div class="p-6 bg-[#0a0a0a]">
+                <div class="flex gap-4 mb-4">
+                    <div class="w-1/4 h-24 bg-gray-800 border border-gray-600 flex items-center justify-center text-4xl">⚠</div>
+                    <div class="w-3/4">
+                        <h3 id="ev-title" class="text-xl font-bold text-white mb-2 serif-font">ТЕРАКТ В СТОЛИЦЕ</h3>
+                        <p id="ev-desc" class="text-xs text-gray-400 leading-relaxed typewriter">
+                            Срочные новости: в центре столицы прогремел взрыв. Службы спасения работают на месте. Общество требует ответа.
+                        </p>
+                    </div>
+                </div>
+                <div id="ev-options" class="space-y-2">
+                    <!-- Кнопки -->
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA & CONFIG ---
+        // --- БАЗА ДАННЫХ (DB) ---
         const CONFIG = {
             START_YEAR: 2000,
-            END_YEAR: 2222,
-            TICK_RATE_MS: 500 // Base speed
+            END_YEAR: 2222
         };
 
-        const COUNTRIES_DB = {
-            'RUS': { name: 'Россия', color: '#682626', ideology: 'Авторитаризм', leaders: [
-                { name: 'Vladimir Putin', start: 2000, end: 2008 },
-                { name: 'Dmitry Medvedev', start: 2008, end: 2012 },
-                { name: 'Vladimir Putin', start: 2012, end: 2030 } // Extended for gameplay
-            ]},
-            'USA': { name: 'США', color: '#263859', ideology: 'Демократия', leaders: [
-                { name: 'Bill Clinton', start: 1993, end: 2001 },
-                { name: 'George W. Bush', start: 2001, end: 2009 },
-                { name: 'Barack Obama', start: 2009, end: 2017 },
-                { name: 'Donald Trump', start: 2017, end: 2021 },
-                { name: 'Joe Biden', start: 2021, end: 2025 },
-                { name: 'Donald Trump', start: 2025, end: 2029 }
-            ]},
-            'CHN': { name: 'Китай', color: '#8a6b28', ideology: 'Коммунизм', leaders: [
-                { name: 'Jiang Zemin', start: 1993, end: 2003 },
-                { name: 'Hu Jintao', start: 2003, end: 2013 },
-                { name: 'Xi Jinping', start: 2013, end: 2035 }
-            ]},
-            'DEU': { name: 'Германия', color: '#3d3d3d', ideology: 'Демократия', leaders: [
-                { name: 'Gerhard Schroeder', start: 1998, end: 2005 },
-                { name: 'Angela Merkel', start: 2005, end: 2021 },
-                { name: 'Olaf Scholz', start: 2021, end: 2025 }
-            ]},
-            'UKR': { name: 'Украина', color: '#286b8a', ideology: 'Демократия', leaders: [
-                { name: 'Leonid Kuchma', start: 1994, end: 2005 },
-                { name: 'Viktor Yushchenko', start: 2005, end: 2010 },
-                { name: 'Viktor Yanukovych', start: 2010, end: 2014 },
-                { name: 'Petro Poroshenko', start: 2014, end: 2019 },
-                { name: 'Volodymyr Zelenskyy', start: 2019, end: 2029 }
-            ]}
+        // Русские названия для карты (GeoJSON обычно на английском)
+        const TRANSLATIONS = {
+            "Russia": "Россия", "United States of America": "США", "China": "Китай", "Germany": "Германия", "France": "Франция",
+            "Ukraine": "Украина", "United Kingdom": "Великобритания", "Poland": "Польша", "Italy": "Италия", "Spain": "Испания",
+            "Turkey": "Турция", "Iran": "Иран", "Japan": "Япония", "South Korea": "Южная Корея", "North Korea": "КНДР",
+            "India": "Индия", "Brazil": "Бразилия", "Canada": "Канада", "Australia": "Австралия", "Kazakhstan": "Казахстан",
+            "Belarus": "Беларусь", "Finland": "Финляндия", "Sweden": "Швеция", "Norway": "Норвегия"
         };
 
-        const EVENTS_DB = [
+        const DB = {
+            'RUS': { 
+                name: 'Россия', 
+                color: '#4a6b4a', 
+                ideology: 'Авторитаризм',
+                gdp: 260, 
+                army: 1000,
+                leaders: [
+                    { start: 2000, end: 2008, name: 'Владимир Путин', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Vladimir_Putin_-_2000-11-15.jpg/220px-Vladimir_Putin_-_2000-11-15.jpg' },
+                    { start: 2008, end: 2012, name: 'Дмитрий Медведев', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Dmitry_Medvedev_2011.jpg/220px-Dmitry_Medvedev_2011.jpg' },
+                    { start: 2012, end: 2036, name: 'Владимир Путин', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Vladimir_Putin_2024.jpg/220px-Vladimir_Putin_2024.jpg' }
+                ]
+            },
+            'USA': { 
+                name: 'США', 
+                color: '#2b3b55', 
+                ideology: 'Демократия',
+                gdp: 10200, 
+                army: 1400,
+                leaders: [
+                    { start: 2000, end: 2001, name: 'Билл Клинтон', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/220px-Bill_Clinton.jpg' },
+                    { start: 2001, end: 2009, name: 'Джордж Буш мл.', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/George-W-Bush.jpeg/220px-George-W-Bush.jpeg' },
+                    { start: 2009, end: 2017, name: 'Барак Обама', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/220px-President_Barack_Obama.jpg' },
+                    { start: 2017, end: 2021, name: 'Дональд Трамп', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg' },
+                    { start: 2021, end: 2025, name: 'Джо Байден', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/220px-Joe_Biden_presidential_portrait.jpg' },
+                    { start: 2025, end: 2029, name: 'Дональд Трамп', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg' }
+                ]
+            },
+            'CHN': {
+                name: 'Китай',
+                color: '#8c7e38',
+                ideology: 'Коммунизм',
+                gdp: 1200,
+                army: 2000,
+                leaders: [
+                    { start: 2000, end: 2003, name: 'Цзян Цзэминь', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Jiang_Zemin_2002.jpg/220px-Jiang_Zemin_2002.jpg' },
+                    { start: 2003, end: 2013, name: 'Ху Цзиньтао', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Hu_Jintao_2011.jpg/220px-Hu_Jintao_2011.jpg' },
+                    { start: 2013, end: 2040, name: 'Си Цзиньпин', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Xi_Jinping_2019.jpg/220px-Xi_Jinping_2019.jpg' }
+                ]
+            },
+            'DEU': {
+                name: 'Германия',
+                color: '#444',
+                ideology: 'Демократия',
+                gdp: 1900,
+                army: 300,
+                leaders: [
+                    { start: 1998, end: 2005, name: 'Герхард Шрёдер', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Gerhard_Schroeder_2005.jpg/220px-Gerhard_Schroeder_2005.jpg' },
+                    { start: 2005, end: 2021, name: 'Ангела Меркель', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Besuch_Bundeskanzlerin_Angela_Merkel_im_Rathaus_K%C3%B6ln-09916.jpg/220px-Besuch_Bundeskanzlerin_Angela_Merkel_im_Rathaus_K%C3%B6ln-09916.jpg' },
+                    { start: 2021, end: 2025, name: 'Олаф Шольц', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/2021_Olaf_Scholz_%28cropped%29.jpg/220px-2021_Olaf_Scholz_%28cropped%29.jpg' },
+                    { start: 2025, end: 2030, name: 'Фридрих Мерц', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/2024-05-07_CDU_CSU_Fraktionssitzung_Bundestag_by_Olaf_Kosinsky_0396.jpg/220px-2024-05-07_CDU_CSU_Fraktionssitzung_Bundestag_by_Olaf_Kosinsky_0396.jpg' }
+                ]
+            },
+            'UKR': {
+                name: 'Украина',
+                color: '#3d6e8a',
+                ideology: 'Демократия',
+                gdp: 32,
+                army: 200,
+                leaders: [
+                    { start: 2000, end: 2005, name: 'Леонид Кучма', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Leonid_Kuchma_2003.jpg/220px-Leonid_Kuchma_2003.jpg' },
+                    { start: 2005, end: 2010, name: 'Виктор Ющенко', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Yushchenko.jpg/220px-Yushchenko.jpg' },
+                    { start: 2010, end: 2014, name: 'Виктор Янукович', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Viktor_Yanukovych_2011-09-08.jpg/220px-Viktor_Yanukovych_2011-09-08.jpg' },
+                    { start: 2014, end: 2019, name: 'Петр Порошенко', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Official_portrait_of_Petro_Poroshenko.jpg/220px-Official_portrait_of_Petro_Poroshenko.jpg' },
+                    { start: 2019, end: 2030, name: 'Владимир Зеленский', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Volodymyr_Zelensky_Official_portrait.jpg/220px-Volodymyr_Zelensky_Official_portrait.jpg' }
+                ]
+            }
+        };
+
+        const EVENTS = [
             {
-                id: 'school_attack',
-                title: 'ТРАГЕДИЯ В ШКОЛЕ',
-                desc: 'Вооруженное нападение на учебное заведение. Страна в шоке.',
+                title: "КРАХ ФОНДОВОГО РЫНКА",
+                desc: "Глобальная экономика в рецессии. Индексы падают.",
                 options: [
-                    { text: 'Объявить траур (Стабильность -5%)', effect: (s) => s.stab -= 5 },
-                    { text: 'Усилить охрану (Полит. власть -20)', effect: (s) => s.pp -= 20 }
-                ],
-                chance: 0.0005 // Very rare per tick
+                    { text: "Спасти банки (Бюджет -5B)", effect: (s) => s.money -= 5 },
+                    { text: "Пусть выживают сильнейшие (Стаб -10%)", effect: (s) => s.stab -= 10 }
+                ]
             },
             {
-                id: 'market_crash',
-                title: 'ОБВАЛ РЫНКОВ',
-                desc: 'Крупнейшие биржи фиксируют рекордное падение индексов.',
+                title: "ПАНДЕМИЯ",
+                desc: "Новый вирус распространяется по миру.",
                 options: [
-                    { text: 'Влить резервы (Бюджет -500)', effect: (s) => s.pp -= 50 }, // Simplified to PP
-                    { text: 'Пусть рынок решает (Стабильность -10%)', effect: (s) => s.stab -= 10 }
-                ],
-                chance: 0.0003
+                    { text: "Ввести локдаун (Экономика -10%)", effect: (s) => s.money *= 0.9 },
+                    { text: "Игнорировать (Стаб -15%)", effect: (s) => s.stab -= 15 }
+                ]
             },
             {
-                id: 'terror_act',
-                title: 'ТЕРАКТ В МЕТРО',
-                desc: 'Взрыв в столичном метрополитене. Требуется жесткая реакция.',
+                title: "ТЕРАКТ",
+                desc: "Атака на гражданский объект. Страна требует отмщения.",
                 options: [
-                    { text: 'Антитеррор. операция (Напряжение +2%)', effect: (s) => { s.stab += 5; document.getElementById('res-tension').innerText = (parseInt(document.getElementById('res-tension').innerText)+2) + '%'; } },
-                    { text: 'Скрыть детали (Стабильность -5%)', effect: (s) => s.stab -= 5 }
-                ],
-                chance: 0.0004
+                    { text: "Усилить охрану (П.Власть -20)", effect: (s) => s.pp -= 20 },
+                    { text: "Найти виновных (Напряжение +5%)", effect: (s) => document.getElementById('res-tension').innerText = (parseInt(document.getElementById('res-tension').innerText)+5) + '%' }
+                ]
             }
         ];
 
-        const FUTURE_NAMES_FIRST = ["Cyber", "Neo", "X-", "Ion", "Nova", "Tech", "Alpha", "Omega", "Zion"];
-        const FUTURE_NAMES_LAST = ["Unit", "Core", "Prime", "7", "X", "V", "Mind", "Flux", "Synth"];
+        // Имена для генератора (2030+)
+        const GEN_NAMES = ["Алекс", "Джон", "Ли", "Ханс", "Мария", "Елена", "Дэвид", "Сара", "Виктор", "Ольга"];
+        const GEN_SURNAMES = ["Прайм", "Нова", "Смит", "Иванов", "Чен", "Мюллер", "Петров", "Ву", "Сильвер", "Штольц"];
 
-        // --- STATE ---
+        // --- ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
         let state = {
-            player: null, // ID
-            selectedTarget: null, // ID
+            player: null, // ID страны игрока
+            target: null, // ID выбранной страны
             date: new Date(2000, 0, 1),
             speed: 0,
-            countries: [], // Array of objects
-            justifications: {}, // targetId: { progress: 0, active: bool, ready: bool }
-            wars: {}, // targetId: { progress: 0, active: bool }
-            resources: { pp: 250, stab: 80 }
+            countries: [], // Массив всех стран (GeoJSON + данные)
+            resources: { pp: 200, stab: 70, money: 50 },
+            justifications: {}, // { targetId: { progress: 0 } }
+            wars: {} // { targetId: { progress: 0 } }
         };
 
-        let loopInterval = null;
+        let intervalId = null;
 
-        // --- INITIALIZATION ---
+        // --- ИНИЦИАЛИЗАЦИЯ ---
         window.onload = async () => {
             await initMap();
-            renderSelectionList();
+            renderCountryList();
         };
 
         async function initMap() {
@@ -538,151 +624,161 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
 
-            // Fallback map logic handled via fetching
+            // Используем надежный CDN для TopoJSON (меньше вес, надежнее)
             try {
-                const res = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
-                const data = await res.json();
+                const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json');
+                const world = await response.json();
                 
-                state.countries = data.features.map((f, i) => {
-                    const id = f.id || f.properties.name.substring(0,3).toUpperCase();
-                    // Merge with DB if exists
-                    const dbData = COUNTRIES_DB[id] || { 
-                        name: f.properties.name, 
-                        color: '#333', 
-                        ideology: 'Нейтралитет',
-                        leaders: [] 
-                    };
+                // Конвертация TopoJSON в GeoJSON
+                const features = topojson.feature(world, world.objects.countries).features;
+
+                state.countries = features.map(f => {
+                    const engName = f.properties.name;
+                    // Пытаемся найти код страны по имени (упрощенно)
+                    let id = "UNK";
                     
+                    // Простой маппинг для основных стран, чтобы связать с DB
+                    if(engName === "Russia") id = "RUS";
+                    else if(engName === "United States of America") id = "USA";
+                    else if(engName === "China") id = "CHN";
+                    else if(engName === "Germany") id = "DEU";
+                    else if(engName === "Ukraine") id = "UKR";
+                    else id = engName.substring(0, 3).toUpperCase();
+
+                    const dbEntry = DB[id] || { 
+                        name: TRANSLATIONS[engName] || engName, // Перевод или оригинал
+                        color: '#2a2a2a', 
+                        ideology: 'Нейтралитет', 
+                        gdp: (Math.random() * 100).toFixed(0),
+                        army: (Math.random() * 200).toFixed(0),
+                        leaders: []
+                    };
+
                     return {
                         id: id,
                         geo: f,
-                        ...dbData,
-                        currentLeader: getLeaderForDate(dbData.leaders, 2000) || "Generic Leader",
-                        army: Math.floor(Math.random() * 500) + 50,
-                        gdp: (Math.random() * 2 + 0.1).toFixed(1)
+                        ...dbEntry,
+                        currentLeader: getLeader(dbEntry.leaders, 2000),
+                        relation: 0
                     };
                 });
-            } catch (e) {
-                console.error("Map fetch failed", e);
-                // Minimal fallback for code to not crash if fetch fails
-                state.countries = [];
+
+                // Отрисовка
+                const projection = d3.geoNaturalEarth1().scale(width / 5.5).translate([width/2.1, height/2]);
+                const path = d3.geoPath().projection(projection);
+
+                svg.append("g")
+                    .selectAll("path")
+                    .data(state.countries)
+                    .enter()
+                    .append("path")
+                    .attr("d", path)
+                    .attr("class", "province")
+                    .attr("id", d => `c-${d.id}`)
+                    .attr("fill", d => d.color) // Изначальный цвет из базы
+                    .on("click", (e, d) => onCountryClick(d));
+
+                // Зум
+                const zoom = d3.zoom()
+                    .scaleExtent([1, 8])
+                    .on("zoom", (e) => svg.select("g").attr("transform", e.transform));
+                svg.call(zoom);
+
+            } catch (err) {
+                console.error("Ошибка загрузки карты:", err);
+                alert("Не удалось загрузить карту мира. Проверьте соединение.");
             }
-
-            // Draw Map
-            const projection = d3.geoNaturalEarth1().scale(width / 5.5).translate([width/2.2, height/2]);
-            const path = d3.geoPath().projection(projection);
-
-            svg.append("g")
-                .selectAll("path")
-                .data(state.countries)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "province")
-                .attr("id", d => `map-${d.id}`)
-                .attr("fill", "#222") // Default fog of war style
-                .on("click", (e, d) => onMapClick(d));
-            
-            // Zoom
-            svg.call(d3.zoom().on("zoom", (e) => svg.select("g").attr("transform", e.transform)));
         }
 
-        // --- SELECTION LOGIC ---
-        function renderSelectionList() {
+        // --- ЛОГИКА ВЫБОРА СТРАНЫ ---
+        function renderCountryList() {
             const list = document.getElementById('country-list');
-            // Show only major/defined countries first
-            const majors = state.countries.filter(c => COUNTRIES_DB[c.id]);
-            const others = state.countries.filter(c => !COUNTRIES_DB[c.id]).slice(0, 10); // Limit list
-
-            [...majors, ...others].forEach(c => {
-                const btn = document.createElement('div');
-                btn.className = "p-2 bg-gray-800 border border-gray-600 hover:bg-yellow-900/50 cursor-pointer flex justify-between items-center";
-                btn.innerHTML = `<span class="font-bold">${c.name}</span> <span class="text-[9px] text-gray-500">${c.id}</span>`;
-                btn.onclick = () => showSelectionDetails(c);
-                list.appendChild(btn);
+            // Сначала показываем прописанные страны
+            const majors = state.countries.filter(c => DB[c.id]);
+            
+            majors.forEach(c => {
+                const div = document.createElement('div');
+                div.className = "p-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 cursor-pointer flex justify-between items-center text-gray-300 hover:text-white transition";
+                div.innerHTML = `<span class="font-bold text-xs">${c.name}</span> <span class="text-[9px] text-gray-500">${c.ideology}</span>`;
+                div.onclick = () => selectCountryPreview(c);
+                list.appendChild(div);
             });
         }
 
-        function showSelectionDetails(c) {
+        function selectCountryPreview(c) {
             document.getElementById('select-placeholder').classList.add('hidden');
             document.getElementById('select-details').classList.remove('hidden');
             
             document.getElementById('sel-name').innerText = c.name;
             document.getElementById('sel-ideology').innerText = c.ideology;
-            document.getElementById('sel-leader').innerText = c.currentLeader;
-            document.getElementById('sel-army').innerText = c.army + "K";
-            document.getElementById('sel-gdp').innerText = "$" + c.gdp + "T";
+            document.getElementById('sel-gdp').innerText = `$${c.gdp}B`;
+            document.getElementById('sel-army').innerText = `${c.army}K`;
             
-            // Temporary stash for start
-            state.tempSelected = c.id;
+            // Лидер
+            const leader = c.currentLeader;
+            document.getElementById('sel-leader-name').innerText = leader.name;
+            
+            const img = document.getElementById('sel-leader-img');
+            const ph = document.getElementById('sel-leader-placeholder');
+            
+            if (leader.img) {
+                img.src = leader.img;
+                img.classList.remove('hidden');
+                ph.classList.add('hidden');
+            } else {
+                img.classList.add('hidden');
+                ph.classList.remove('hidden');
+            }
+
+            state.tempPlayer = c.id;
         }
 
         function startGame() {
-            if (!state.tempSelected) return;
-            state.player = state.tempSelected;
+            if (!state.tempPlayer) return;
+            state.player = state.tempPlayer;
             
             document.getElementById('selection-screen').style.display = 'none';
             document.getElementById('game-ui').classList.remove('hidden');
-
-            const playerCountry = state.countries.find(c => c.id === state.player);
             
-            // Init UI
-            document.getElementById('game-country').innerText = playerCountry.name;
-            document.getElementById('game-leader').innerText = playerCountry.currentLeader;
-            document.getElementById('stat-army').innerText = playerCountry.army + "K";
+            updateTopBar();
             
-            // Colorize map (Player green, others gray/ideological)
+            // Раскраска карты: Игрок зеленый, остальные дефолт
             d3.selectAll('.province')
-                .attr("fill", d => {
-                    if (d.id === state.player) return "#2d5228"; // Player Green
-                    if (COUNTRIES_DB[d.id]) return COUNTRIES_DB[d.id].color; // Historical Color
-                    return "#1a1a1a"; // Generic
-                });
-
-            addNews("НОВОЕ ТЫСЯЧЕЛЕТИЕ НАСТУПИЛО. МИР СМОТРИТ НА ВАС.");
+                .attr('fill', d => d.id === state.player ? '#2d5228' : '#2a2a2a');
+                
+            addNews("ДОБРО ПОЖАЛОВАТЬ, КОМАНДУЮЩИЙ. 2000 ГОД НАСТУПИЛ.");
         }
 
-        // --- GAME LOOP & TIME ---
+        // --- ИГРОВОЙ ЦИКЛ ---
         function setSpeed(s) {
             state.speed = s;
-            if (loopInterval) clearInterval(loopInterval);
-            
+            if (intervalId) clearInterval(intervalId);
             if (s > 0) {
-                const ms = s === 1 ? 1000 : (s === 2 ? 300 : 100); // 1 sec = 1 day, or faster
-                loopInterval = setInterval(gameTick, ms);
+                const ms = s === 1 ? 1000 : (s === 2 ? 200 : 50);
+                intervalId = setInterval(gameTick, ms);
             }
         }
 
         function gameTick() {
-            // Advance Time
+            // Время
             state.date.setDate(state.date.getDate() + 1);
             updateDateUI();
 
-            // Resources
+            // Ресурсы
             state.resources.pp += 0.5;
-            document.getElementById('res-pp').innerText = Math.floor(state.resources.pp);
+            state.resources.money += 0.1;
+            updateTopBar();
 
-            // Update Leaders (Monthly check for performance)
+            // Проверка лидеров (1 число каждого месяца)
             if (state.date.getDate() === 1) {
-                updateLeaders();
+                checkLeaders();
+                
+                // Случайные события
+                if (Math.random() < 0.05) triggerEvent();
             }
 
-            // Process Justifications
-            processJustifications();
-
-            // Process Wars
+            // Войны и оправдания
             processWars();
-
-            // Random Events
-            if (Math.random() < 0.005) { // 0.5% chance per day
-                triggerRandomEvent();
-            }
-
-            // End Game check
-            if (state.date.getFullYear() >= CONFIG.END_YEAR) {
-                setSpeed(0);
-                alert("2222 ГОД. СИМУЛЯЦИЯ ЗАВЕРШЕНА.");
-            }
         }
 
         function updateDateUI() {
@@ -691,239 +787,256 @@
             document.getElementById('date-display').innerText = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
         }
 
-        function updateLeaders() {
+        function updateTopBar() {
+            const p = state.countries.find(c => c.id === state.player);
+            if (!p) return;
+            
+            document.getElementById('game-country').innerText = p.name;
+            document.getElementById('game-leader').innerText = p.currentLeader.name;
+            
+            document.getElementById('res-pp').innerText = Math.floor(state.resources.pp);
+            document.getElementById('res-stab').innerText = Math.floor(state.resources.stab) + '%';
+            document.getElementById('res-money').innerText = Math.floor(state.resources.money) + 'B';
+        }
+
+        // --- ЛИДЕРЫ И ГЕНЕРАЦИЯ ---
+        function getLeader(history, year) {
+            if (!history || history.length === 0) return { name: "Временное Правительство", img: null };
+            
+            const historical = history.find(l => year >= l.start && year < l.end);
+            if (historical) return historical;
+            
+            // Если год больше последнего исторического - генерируем
+            if (year > 2026) {
+                return { name: generateName(), img: null };
+            }
+            
+            return { name: "Совет Министров", img: null };
+        }
+
+        function checkLeaders() {
             const year = state.date.getFullYear();
             
             state.countries.forEach(c => {
-                if (COUNTRIES_DB[c.id]) {
-                    // Historical Logic
-                    if (year <= 2026) {
-                        const newLeader = getLeaderForDate(COUNTRIES_DB[c.id].leaders, year);
-                        if (newLeader && newLeader !== c.currentLeader) {
-                            c.currentLeader = newLeader;
-                            if (c.id === state.player) {
-                                document.getElementById('game-leader').innerText = newLeader;
-                                addNews(`СМЕНА ВЛАСТИ: ${newLeader} ТЕПЕРЬ ВО ГЛАВЕ СТРАНЫ.`);
-                            }
-                        }
-                    } else {
-                        // AI Generation (Change every ~5 years random)
-                        if (Math.random() < 0.02 && year > 2026) {
-                            c.currentLeader = generateAILeader();
+                const newLeader = getLeader(c.leaders, year);
+                
+                // Если это сгенерированный лидер, сохраняем его, чтобы не менялся каждый день
+                if (year > 2026 && (!c.generatedLeader || Math.random() < 0.01)) { // Раз в сто лет или если нет
+                     c.generatedLeader = newLeader;
+                     c.currentLeader = newLeader;
+                } else if (year <= 2026) {
+                    // Исторический
+                    if (newLeader.name !== c.currentLeader.name) {
+                        c.currentLeader = newLeader;
+                        if (c.id === state.player) {
+                            addNews(`СРОЧНО: В стране ${c.name} новый лидер - ${newLeader.name}`);
+                            updateTopBar();
                         }
                     }
                 }
             });
             
-            // Refresh Target Panel if open
-            if (state.selectedTarget) {
-                const t = state.countries.find(c => c.id === state.selectedTarget);
-                document.getElementById('tg-leader').innerText = t.currentLeader;
-            }
+            // Обновляем панель если открыта
+            if (state.target) openSidePanel(state.countries.find(c => c.id === state.target));
         }
 
-        function getLeaderForDate(leaders, year) {
-            const entry = leaders.find(l => year >= l.start && year < l.end);
-            return entry ? entry.name : null;
+        function generateName() {
+            const name = GEN_NAMES[Math.floor(Math.random() * GEN_NAMES.length)];
+            const surname = GEN_SURNAMES[Math.floor(Math.random() * GEN_SURNAMES.length)];
+            return `${name} ${surname}`;
         }
 
-        function generateAILeader() {
-            const f = FUTURE_NAMES_FIRST[Math.floor(Math.random() * FUTURE_NAMES_FIRST.length)];
-            const l = FUTURE_NAMES_LAST[Math.floor(Math.random() * FUTURE_NAMES_LAST.length)];
-            const num = Math.floor(Math.random() * 99);
-            return `${f}-${l} v.${num}`;
+        // --- ВЗАИМОДЕЙСТВИЕ ---
+        function onCountryClick(d) {
+            if (d.id === state.player) return;
+            state.target = d.id;
+            openSidePanel(d);
         }
 
-        // --- MAP INTERACTION ---
-        function onMapClick(d) {
-            if (d.id === state.player) return; // Can't select self for diplomacy
+        function openSidePanel(d) {
+            const panel = document.getElementById('side-panel');
+            panel.style.transform = "translateX(0)"; // Показать
             
-            state.selectedTarget = d.id;
-            const panel = document.getElementById('target-panel');
-            panel.classList.remove('hidden');
-            panel.style.display = 'flex';
-
+            document.getElementById('panel-empty').classList.add('hidden');
+            document.getElementById('target-info').classList.remove('hidden');
+            
             document.getElementById('tg-name').innerText = d.name;
-            document.getElementById('tg-leader').innerText = d.currentLeader;
             document.getElementById('tg-ideology').innerText = d.ideology;
+            document.getElementById('tg-army').innerText = `~${d.army}K`;
+            document.getElementById('tg-ind').innerText = `${Math.floor(d.gdp / 10)} фб.`;
             
-            // Reset UI State based on relation
-            refreshWarUI(d.id);
-        }
-
-        function closeTarget() {
-            document.getElementById('target-panel').classList.add('hidden');
-            state.selectedTarget = null;
-        }
-
-        // --- WAR MECHANICS ---
-        function refreshWarUI(targetId) {
-            const idle = document.getElementById('war-idle');
-            const progress = document.getElementById('war-progress');
-            const ready = document.getElementById('war-ready');
-            const active = document.getElementById('war-active');
-            
-            idle.classList.add('hidden');
-            progress.classList.add('hidden');
-            ready.classList.add('hidden');
-            active.classList.add('hidden');
-
-            // Check State
-            if (state.wars[targetId]) {
-                active.classList.remove('hidden');
-                updateWarUI(targetId);
-                return;
+            // Лидер
+            document.getElementById('tg-leader').innerText = d.currentLeader.name;
+            const img = document.getElementById('tg-leader-img');
+            const ph = document.getElementById('tg-leader-ph');
+            if (d.currentLeader.img) {
+                img.src = d.currentLeader.img;
+                img.classList.remove('hidden');
+                ph.classList.add('hidden');
+            } else {
+                img.classList.add('hidden');
+                ph.classList.remove('hidden');
             }
 
-            const just = state.justifications[targetId];
-            if (!just) {
-                idle.classList.remove('hidden');
-            } else if (just.ready) {
-                ready.classList.remove('hidden');
+            // Отношения
+            const rel = d.relation || 0;
+            document.getElementById('tg-rel-val').innerText = rel;
+            document.getElementById('tg-rel-bar').style.width = (rel + 50) + '%';
+            if (rel > 0) document.getElementById('tg-rel-bar').style.backgroundColor = '#2d5228';
+            else document.getElementById('tg-rel-bar').style.backgroundColor = '#8a1c1c';
+
+            updateWarUI();
+        }
+
+        function closeSidePanel() {
+            document.getElementById('side-panel').style.transform = "translateX(100%)";
+            state.target = null;
+        }
+
+        // --- ВОЙНА И МИР ---
+        function updateWarUI() {
+            const tId = state.target;
+            const just = state.justifications[tId];
+            const war = state.wars[tId];
+
+            document.getElementById('justify-progress').classList.add('hidden');
+            document.getElementById('btn-declare-war').classList.add('hidden');
+            document.getElementById('active-war-stats').classList.add('hidden');
+            document.getElementById('btn-justify').disabled = false;
+            document.getElementById('btn-justify').innerText = "ОПРАВДАТЬ ЦЕЛЬ ВОЙНЫ (50 PP)";
+
+            if (war) {
+                document.getElementById('btn-justify').classList.add('hidden');
+                document.getElementById('active-war-stats').classList.remove('hidden');
+                document.getElementById('war-progress-bar').style.width = war.progress + '%';
+                document.getElementById('war-score').innerText = Math.floor(war.progress) + '%';
+            } else if (just) {
+                if (just.ready) {
+                    document.getElementById('btn-justify').classList.add('hidden');
+                    document.getElementById('btn-declare-war').classList.remove('hidden');
+                } else {
+                    document.getElementById('btn-justify').disabled = true;
+                    document.getElementById('btn-justify').innerText = "ФАБРИКАЦИЯ...";
+                    document.getElementById('justify-progress').classList.remove('hidden');
+                    document.getElementById('justify-bar').style.width = just.progress + '%';
+                    document.getElementById('justify-time').innerText = Math.ceil(30 - (just.progress * 0.3)) + ' дн.';
+                }
             } else {
-                progress.classList.remove('hidden');
-                document.getElementById('justify-bar').style.width = just.progress + '%';
+                document.getElementById('btn-justify').classList.remove('hidden');
             }
         }
 
         function startJustify() {
             if (state.resources.pp < 50) {
-                alert("Недостаточно политической власти (Нужно 50)");
+                alert("Недостаточно политической власти!");
                 return;
             }
             state.resources.pp -= 50;
-            const target = state.selectedTarget;
+            updateTopBar();
             
-            state.justifications[target] = { progress: 0, active: true, ready: false };
-            refreshWarUI(target);
-            addNews(`НАЧАТА ПОДГОТОВКА ОПРАВДАНИЯ ВОЙНЫ ПРОТИВ ${target}`);
-        }
-
-        function cancelJustify() {
-            const target = state.selectedTarget;
-            delete state.justifications[target];
-            refreshWarUI(target);
-        }
-
-        function processJustifications() {
-            for (const [tid, data] of Object.entries(state.justifications)) {
-                if (data.active && !data.ready) {
-                    data.progress += 2; // ~50 days to finish at 1 tick/day (simplified logic for speed 1)
-                    if (data.progress >= 100) {
-                        data.progress = 100;
-                        data.ready = true;
-                        data.active = false; // Stopped processing, waiting for declaration
-                        addNews(`CASUS BELLI ПРОТИВ ${tid} ГОТОВ!`);
-                        if (state.selectedTarget === tid) refreshWarUI(tid);
-                    } else {
-                        if (state.selectedTarget === tid) {
-                            document.getElementById('justify-bar').style.width = data.progress + '%';
-                            document.getElementById('justify-timer').innerText = Math.ceil((100 - data.progress)/2) + " дн.";
-                        }
-                    }
-                }
-            }
+            state.justifications[state.target] = { progress: 0, ready: false };
+            updateWarUI();
         }
 
         function declareWar() {
-            const target = state.selectedTarget;
-            const just = state.justifications[target];
-            if (!just || !just.ready) return;
-
-            // Remove justification, start war
-            delete state.justifications[target];
-            state.wars[target] = { progress: 0, active: true };
+            const tId = state.target;
+            delete state.justifications[tId]; // Удаляем цель
+            state.wars[tId] = { progress: 0 };
             
-            refreshWarUI(target);
+            // Визуал на карте
+            d3.select(`#c-${tId}`).classed('war-active-border', true);
+            d3.select(`#c-${tId}`).style('fill', 'url(#hatch-war) #333');
             
-            // Visuals
-            const mapEl = d3.select(`#map-${target}`);
-            mapEl.classed('war-active-border', true); // Flashing border
-            
-            addNews(`ВОЙНА ОБЪЯВЛЕНА: ${target}! ВОЙСКА ПЕРЕСЕКЛИ ГРАНИЦУ.`);
+            addNews(`ВОЙНА! ${state.countries.find(c=>c.id==state.player).name} ОБЪЯВЛЯЕТ ВОЙНУ ${state.countries.find(c=>c.id==tId).name}!`);
+            updateWarUI();
         }
 
         function processWars() {
-            for (const [tid, data] of Object.entries(state.wars)) {
-                if (data.active) {
-                    // War Logic: Random fluctuation upwards
-                    // In a real game, this would depend on Army Strength comparison
-                    const gain = Math.random() * 0.5; 
-                    data.progress += gain;
-
-                    if (data.progress >= 100) {
-                        // Victory
-                        data.progress = 100;
-                        data.active = false;
-                        countryCapitulated(tid);
+            // Оправдания
+            for (let tId in state.justifications) {
+                const j = state.justifications[tId];
+                if (!j.ready) {
+                    j.progress += 2; // Скорость оправдания
+                    if (j.progress >= 100) {
+                        j.ready = true;
+                        addNews(`ЦЕЛЬ ВОЙНЫ ПРОТИВ ${tId} ГОТОВА!`);
                     }
-
-                    // Update UI if viewing this country
-                    if (state.selectedTarget === tid) {
-                        updateWarUI(tid);
-                    }
+                    if (state.target === tId) updateWarUI();
                 }
             }
-        }
 
-        function updateWarUI(tid) {
-            const data = state.wars[tid];
-            if(data) {
-                document.getElementById('conquest-bar').style.width = data.progress + '%';
-                document.getElementById('war-score').innerText = Math.floor(data.progress) + '%';
+            // Активные войны
+            for (let tId in state.wars) {
+                const w = state.wars[tId];
+                // Логика битвы (рандом + армия)
+                const playerC = state.countries.find(c => c.id === state.player);
+                const enemyC = state.countries.find(c => c.id === tId);
+                
+                // Простой расчет прогресса
+                let gain = 0.2; // База
+                if (parseInt(playerC.army) > parseInt(enemyC.army)) gain += 0.3;
+                
+                w.progress += gain;
+                if (w.progress >= 100) {
+                    // Победа
+                    w.progress = 100;
+                    countryCapitulated(tId);
+                }
+                if (state.target === tId) updateWarUI();
             }
         }
 
-        function countryCapitulated(tid) {
-            addNews(`ПОБЕДА! ${tid} КАПИТУЛИРОВАЛА ПЕРЕД НАШИМИ ВОЙСКАМИ.`);
-            delete state.wars[tid];
+        function countryCapitulated(tId) {
+            delete state.wars[tId];
+            addNews(`ПОБЕДА! ${tId} КАПИТУЛИРОВАЛА.`);
             
-            // Visual conquest
-            const mapEl = d3.select(`#map-${tid}`);
-            mapEl.classed('war-active-border', false);
-            mapEl.classed('province', false); // Stop hover effects maybe?
-            mapEl.attr('fill', '#2d5228'); // Change to player color permanently
+            // Обновляем карту
+            const el = d3.select(`#c-${tId}`);
+            el.classed('war-active-border', false);
+            el.style('fill', 'url(#hatch-occupied) #2d5228'); // Заштрихованный зеленый
             
-            // Optional: Use occupied hatch pattern
-            mapEl.style('fill', 'url(#occupied-hatch) #2d5228');
-
-            if (state.selectedTarget === tid) {
-                closeTarget(); // Close panel as country is gone/annexed
-            }
+            if (state.target === tId) closeSidePanel();
         }
 
-        // --- EVENTS ---
-        function triggerRandomEvent() {
-            const ev = EVENTS_DB[Math.floor(Math.random() * EVENTS_DB.length)];
+        // --- СОБЫТИЯ ---
+        function triggerEvent() {
+            const events = [
+                { t: "ТЕРАКТ В МЕТРО", d: "Группа радикалов совершила нападение. Народ требует безопасности.", opts: [{t:"Усилить охрану (-20 PP)", eff:()=>{state.resources.pp-=20}}, {t:"Скрыть детали (-10% Стаб)", eff:()=>{state.resources.stab-=10}}] },
+                { t: "ЭКОНОМИЧЕСКИЙ БУМ", d: "Наши реформы работают. Рынки растут.", opts: [{t:"Инвестировать в армию (+50B)", eff:()=>{state.resources.money+=50}}, {t:"Раздать народу (+10% Стаб)", eff:()=>{state.resources.stab+=10}}] }
+            ];
             
-            // Show Modal
-            setSpeed(0); // Pause game
+            const ev = events[Math.floor(Math.random() * events.length)];
+            
+            // Пауза
+            const oldSpeed = state.speed;
+            setSpeed(0);
+            
             const modal = document.getElementById('event-modal');
             modal.classList.remove('hidden');
             
-            document.getElementById('ev-title').innerText = ev.title;
-            document.getElementById('ev-desc').innerText = ev.desc;
+            document.getElementById('ev-title').innerText = ev.t;
+            document.getElementById('ev-desc').innerText = ev.d;
             
-            const optsContainer = document.getElementById('ev-options');
-            optsContainer.innerHTML = '';
+            const cont = document.getElementById('ev-options');
+            cont.innerHTML = '';
             
-            ev.options.forEach(opt => {
+            ev.opts.forEach(opt => {
                 const btn = document.createElement('button');
-                btn.className = "w-full py-2 bg-gray-800 hover:bg-gray-700 text-xs border border-gray-600 text-left px-4";
-                btn.innerText = `> ${opt.text}`;
+                btn.className = "w-full py-2 bg-gray-800 hover:bg-gray-700 text-xs border border-gray-600 mb-2 text-left px-4";
+                btn.innerText = `> ${opt.t}`;
                 btn.onclick = () => {
-                    opt.effect(state.resources);
+                    opt.eff();
+                    updateTopBar();
                     modal.classList.add('hidden');
-                    setSpeed(1); // Resume
+                    setSpeed(oldSpeed);
                 };
-                optsContainer.appendChild(btn);
+                cont.appendChild(btn);
             });
         }
 
-        // --- NEWS TICKER ---
         function addNews(text) {
             const feed = document.getElementById('news-feed');
-            feed.innerText = `+++ ${text} +++ ` + feed.innerText.substring(0, 100);
+            feed.innerText = `+++ ${text} +++ ` + feed.innerText;
         }
 
     </script>
