@@ -3,355 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruina Lider: Global Strategy v2.0</title>
-    <!-- Tailwind CSS -->
+    <title>Ruina Lider: Global Strategy Ultimate</title>
+    <!-- Библиотеки -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- D3.js -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
         
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --accent: #10b981;
+            --war: #ef4444;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #020617;
-            color: #e2e8f0;
+            background-color: var(--bg-dark);
+            color: #f1f5f9;
+            margin: 0;
             overflow: hidden;
             user-select: none;
         }
 
-        #map-container {
-            background: #000;
-            position: relative;
+        /* Анимации */
+        @keyframes pulse-red {
+            0% { stroke: #ef4444; stroke-width: 1px; }
+            50% { stroke: #ffffff; stroke-width: 3px; }
+            100% { stroke: #ef4444; stroke-width: 1px; }
         }
-        
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        /* Стили карты */
         .country {
             stroke: rgba(255, 255, 255, 0.1);
             stroke-width: 0.5px;
-            transition: fill 0.3s ease, stroke 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            fill: #1e293b;
-        }
-        
-        .country.player-nation {
-            fill: #059669 !important;
-            stroke: #fff;
-            stroke-width: 1.2px;
         }
 
-        .country.at-war {
-            stroke: #ef4444;
-            stroke-width: 1.5px;
-            stroke-dasharray: 4;
-            animation: pulse-war 2s infinite;
-        }
-
-        @keyframes pulse-war {
-            0% { stroke-opacity: 0.5; }
-            50% { stroke-opacity: 1; }
-            100% { stroke-opacity: 0.5; }
+        .country:hover {
+            fill-opacity: 0.8;
+            stroke: rgba(255, 255, 255, 0.5);
         }
 
         .country.selected {
             stroke: #fbbf24;
             stroke-width: 2.5px;
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.3));
         }
 
-        .country:hover {
-            fill: #334155;
-            stroke: rgba(255, 255, 255, 0.5);
+        .country.player {
+            stroke: var(--accent);
+            stroke-width: 2px;
         }
 
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .country.at-war {
+            animation: pulse-red 2s infinite;
         }
 
-        .terminal-text {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .speed-btn.active {
-            background-color: #10b981;
-            color: white;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-        }
-
-        .portrait-frame {
-            width: 100%;
-            height: 160px;
-            background: linear-gradient(180deg, #1e293b, #0f172a);
-            border-bottom: 2px solid rgba(255,255,255,0.05);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* UI Элементы */
+        .glass {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .stat-card {
-            background: rgba(255,255,255,0.03);
-            border-radius: 4px;
-            padding: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
         }
 
-        .resource-chip {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 99px;
-            font-size: 11px;
+        .terminal-log::-webkit-scrollbar { width: 4px; }
+        .terminal-log::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .portrait-placeholder {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .portrait-placeholder::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(16, 185, 129, 0.1) 50%, transparent 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        .resource-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+        
+        .btn-action {
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
             font-weight: 800;
-            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-1px);
+            filter: brightness(1.2);
+        }
     </style>
 </head>
-<body class="h-screen w-screen relative">
+<body class="w-screen h-screen">
 
-    <!-- SETUP SCREEN -->
-    <div id="setup-screen" class="absolute inset-0 z-50 flex flex-col bg-slate-950 items-center justify-center p-10">
-        <div class="max-w-6xl w-full space-y-8 animate-fade-in">
-            <div class="text-center">
-                <h1 class="text-7xl font-black tracking-tighter text-white italic">RUINA <span class="text-emerald-500">LIDER</span> <span class="text-xs align-top opacity-50">2.0</span></h1>
-                <p class="text-slate-500 text-[10px] tracking-[0.6em] uppercase mt-2">Глобальное доминирование: Инициализация протоколов</p>
+    <!-- OVERLAY: LOADING / SETUP -->
+    <div id="setup-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 overflow-hidden">
+        <div class="absolute inset-0 opacity-20">
+            <div class="h-full w-full" style="background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px;"></div>
+        </div>
+
+        <div class="relative max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 p-10 glass rounded-[2rem] shadow-2xl">
+            <!-- Left Side: Map Selection -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h1 class="text-6xl font-black italic tracking-tighter leading-none">RUINA <span class="text-emerald-500">LIDER</span></h1>
+                        <p class="text-slate-500 font-mono text-xs mt-2 uppercase tracking-[0.3em]">Global Hegemony Protocol v2.5</p>
+                    </div>
+                </div>
+                
+                <div class="h-[500px] w-full bg-black/50 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <svg id="svg-setup" class="w-full h-full"></svg>
+                    <div class="absolute bottom-4 left-4 flex gap-2">
+                        <span class="px-2 py-1 bg-black/80 rounded text-[9px] font-bold border border-white/10">SCROLL TO ZOOM</span>
+                        <span class="px-2 py-1 bg-black/80 rounded text-[9px] font-bold border border-white/10">CLICK TO SELECT</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="md:col-span-3 bg-black/40 border border-white/10 rounded-2xl overflow-hidden relative h-[550px] shadow-2xl">
-                    <svg id="selection-map" class="w-full h-full"></svg>
-                    <div class="absolute top-4 left-4 flex gap-2">
-                        <div class="px-3 py-1 bg-black/60 rounded text-[9px] font-bold border border-white/10">КОЛЕСИКО МЫШИ ДЛЯ ЗУМА</div>
-                        <div class="px-3 py-1 bg-black/60 rounded text-[9px] font-bold border border-white/10">ЛКМ ДЛЯ ВЫБОРА</div>
+            <!-- Right Side: Faction Details -->
+            <div class="flex flex-col h-full">
+                <div id="setup-details" class="flex-grow space-y-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-emerald-500 tracking-widest">Выбранный регион</label>
+                        <div id="setup-name" class="text-5xl font-black italic text-white truncate">---</div>
+                    </div>
+
+                    <div id="leader-card" class="stat-card p-0 overflow-hidden border-emerald-500/20">
+                        <div class="h-32 portrait-placeholder flex items-center justify-center">
+                            <svg class="w-16 h-16 text-white/10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="p-4 bg-slate-900/50">
+                            <div id="setup-leader" class="font-bold text-blue-400">---</div>
+                            <div id="setup-ideology" class="text-[10px] text-slate-500 uppercase font-black">Идеология не выбрана</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="stat-card">
+                            <span class="text-[9px] text-slate-500 uppercase block">Военная мощь</span>
+                            <span id="setup-power" class="text-2xl font-black italic text-white">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="text-[9px] text-slate-500 uppercase block">ВВП (млрд $)</span>
+                            <span id="setup-econ" class="text-2xl font-black italic text-white">0</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between border-emerald-500/20">
-                    <div id="preview-content" class="space-y-6">
-                        <div>
-                            <div class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Фракция</div>
-                            <h2 id="preview-name" class="text-4xl font-black italic tracking-tighter text-emerald-500">---</h2>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="stat-card">
-                                <span class="text-[9px] text-slate-500 block uppercase mb-1">Идеология</span>
-                                <span id="preview-ideology" class="text-sm font-bold text-white tracking-wide">---</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="text-[9px] text-slate-500 block uppercase mb-1">Верховный Лидер</span>
-                                <span id="preview-leader" class="text-sm font-bold text-blue-400">---</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="stat-card text-center">
-                                    <span class="text-[9px] text-slate-500 block uppercase">Армия</span>
-                                    <span id="preview-power" class="font-black text-lg">0</span>
-                                </div>
-                                <div class="stat-card text-center">
-                                    <span class="text-[9px] text-slate-500 block uppercase">Экономика</span>
-                                    <span id="preview-econ" class="font-black text-lg">0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="pt-6 space-y-3">
-                        <button id="start-btn" onclick="initializeGame()" disabled class="w-full py-5 bg-slate-800 text-slate-500 font-black rounded-xl opacity-50 cursor-not-allowed transition-all uppercase tracking-widest text-xs">
-                            ПРИНЯТЬ КОМАНДОВАНИЕ
-                        </button>
-                    </div>
+                <div class="pt-8">
+                    <button id="start-game-btn" disabled onclick="startGame()" class="group relative w-full py-5 bg-slate-800 rounded-xl overflow-hidden transition-all disabled:opacity-30">
+                        <div class="relative z-10 text-slate-500 font-black uppercase tracking-widest text-sm group-hover:text-white transition-colors" id="btn-text">Выберите страну</div>
+                        <div id="btn-bg" class="absolute inset-0 bg-emerald-600 translate-y-full transition-transform duration-300 group-hover:translate-y-0"></div>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- GAME UI -->
+    <!-- MAIN GAME INTERFACE -->
     <div id="game-ui" class="hidden h-full flex flex-col">
-        <!-- TOP BAR -->
-        <header class="h-14 bg-slate-900/95 border-b border-white/10 flex items-center justify-between px-6 z-20 backdrop-blur-xl">
+        <!-- TOP NAVIGATION BAR -->
+        <header class="h-14 border-b border-white/10 glass flex items-center justify-between px-6 z-40">
             <div class="flex items-center gap-8">
-                <span class="font-black text-xl italic tracking-tighter">RUINA <span class="text-emerald-500">LIDER</span></span>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center font-black italic text-lg shadow-[0_0_15px_rgba(16,185,129,0.4)]">R</div>
+                    <span class="font-black italic text-xl tracking-tighter">RUINA <span class="text-emerald-500">LIDER</span></span>
+                </div>
                 
-                <div class="flex items-center gap-4 border-l border-white/10 pl-6 h-8">
-                    <div class="resource-chip text-yellow-500">
-                        <span>💰</span> <span id="res-gold">0</span>
+                <div class="h-6 w-px bg-white/10"></div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Бюджет</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-yellow-500 text-xs font-bold">💰</span>
+                            <span id="res-gold" class="resource-val text-sm">1000</span>
+                        </div>
                     </div>
-                    <div class="resource-chip text-blue-400">
-                        <span>🛢️</span> <span id="res-oil">0</span>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Нефть</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-blue-400 text-xs font-bold">🛢️</span>
+                            <span id="res-oil" class="resource-val text-sm">50</span>
+                        </div>
                     </div>
-                    <div class="resource-chip text-slate-300">
-                        <span>⚙️</span> <span id="res-steel">0</span>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Сталь</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-slate-300 text-xs font-bold">⚙️</span>
+                            <span id="res-steel" class="resource-val text-sm">100</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-10">
-                <div class="flex flex-col items-center">
-                    <span id="date-display" class="text-sm font-bold terminal-text">01 JAN 1936</span>
-                    <span id="speed-label" class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.2em]">PAUSED</span>
+            <div class="flex items-center gap-8">
+                <div class="text-right">
+                    <div id="game-date" class="text-sm font-black font-mono tracking-tight">01 JAN 1936</div>
+                    <div id="speed-label" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">PAUSED</div>
                 </div>
-                
-                <div class="flex bg-black/40 rounded-lg border border-white/10 p-0.5">
-                    <button id="sp-0" onclick="changeSpeed(0)" class="speed-btn px-3 py-1 rounded text-[10px] font-bold active">STOP</button>
-                    <button id="sp-1" onclick="changeSpeed(1)" class="speed-btn px-3 py-1 rounded text-[10px] font-bold transition">X1</button>
-                    <button id="sp-2" onclick="changeSpeed(2)" class="speed-btn px-3 py-1 rounded text-[10px] font-bold transition">X2</button>
-                    <button id="sp-3" onclick="changeSpeed(3)" class="speed-btn px-3 py-1 rounded text-[10px] font-bold transition">X5</button>
+
+                <div class="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                    <button onclick="setSpeed(0)" class="speed-btn w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition active-speed" id="btn-speed-0">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    </button>
+                    <button onclick="setSpeed(1)" class="speed-btn w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition" id="btn-speed-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button onclick="setSpeed(2)" class="speed-btn w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition" id="btn-speed-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow flex relative overflow-hidden">
-            <div id="map-container" class="w-full h-full relative overflow-hidden bg-slate-950">
-                <svg id="world-map" class="w-full h-full absolute inset-0"></svg>
+        <main class="flex-grow flex relative">
+            <!-- WORLD MAP -->
+            <div id="map-container" class="flex-grow bg-[#010409] relative overflow-hidden">
+                <svg id="svg-main" class="w-full h-full"></svg>
                 
-                <!-- SIDE INFO PANEL -->
-                <div id="country-info" class="absolute bottom-6 left-6 glass-panel p-0 rounded-2xl w-80 overflow-hidden transition-all duration-500 translate-y-20 opacity-0 pointer-events-none shadow-2xl border-emerald-500/10">
-                    <div class="portrait-frame">
-                        <!-- Procedural Leader Visual -->
-                        <div id="leader-visual" class="relative w-24 h-24 rounded-full border-4 border-white/10 bg-slate-800 flex items-center justify-center overflow-hidden">
-                            <div class="w-12 h-12 bg-white/20 rounded-full mb-[-10px]"></div>
-                            <div class="w-20 h-10 bg-white/10 rounded-full absolute bottom-[-5px]"></div>
-                        </div>
-                        <div class="absolute bottom-3 left-4 right-4 text-center">
-                            <div id="info-ideology" class="text-[8px] font-black bg-white/10 text-white px-2 py-0.5 rounded-full inline-block mb-1 uppercase tracking-tighter">DEMOCRACY</div>
-                            <h2 id="info-leader" class="text-lg font-black leading-tight uppercase tracking-tighter truncate text-blue-400">---</h2>
-                        </div>
-                    </div>
-                    
-                    <div class="p-6 space-y-4">
-                        <div class="flex justify-between items-end border-b border-white/5 pb-2">
-                            <h3 id="info-name" class="text-lg font-black text-white italic truncate">Country Name</h3>
-                            <span id="info-tag" class="text-[10px] font-bold text-slate-500">TAG</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="stat-card">
-                                <span class="text-[9px] text-slate-500 block uppercase">Стабильность</span>
-                                <span id="info-stability" class="text-sm font-bold text-emerald-400">95%</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="text-[9px] text-slate-500 block uppercase">Поддержка</span>
-                                <span id="info-war-support" class="text-sm font-bold text-orange-400">40%</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2 text-[11px]">
-                            <div class="flex justify-between items-center bg-white/5 p-2 rounded">
-                                <span class="text-slate-400">ОТНОШЕНИЯ С НАМИ</span>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                        <div id="rel-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 50%"></div>
-                                    </div>
-                                    <span id="info-relations" class="font-bold text-white">0</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between p-1">
-                                <span class="text-slate-500">ВОЕННАЯ МОЩЬ</span>
-                                <span id="info-power" class="font-bold text-white">0</span>
-                            </div>
-                        </div>
-
-                        <div id="action-panel" class="flex flex-col gap-2 pt-2">
-                            <button onclick="handleDiplomacy('war')" class="py-2 bg-red-600/20 hover:bg-red-600/40 text-red-500 border border-red-500/20 rounded font-bold text-[10px] uppercase tracking-widest transition">Объявить войну</button>
-                            <button onclick="handleDiplomacy('trade')" class="py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-500 border border-blue-500/20 rounded font-bold text-[10px] uppercase tracking-widest transition">Улучшить отношения</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- WAR STATUS INDICATOR -->
-                <div id="global-war-status" class="absolute top-6 left-1/2 -translate-x-1/2 hidden">
-                    <div class="px-6 py-2 bg-red-600/90 text-white rounded-full border-2 border-white/20 shadow-2xl animate-bounce flex items-center gap-3">
-                        <span class="font-black italic text-sm">В СОСТОЯНИИ ВОЙНЫ</span>
-                        <div class="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                <!-- MAP OVERLAYS -->
+                <div id="war-alert" class="absolute top-6 left-1/2 -translate-x-1/2 hidden">
+                    <div class="px-6 py-2 bg-red-600/90 text-white rounded-full font-black italic text-xs border border-white/20 animate-bounce">
+                        В СОСТОЯНИИ ВОЙНЫ
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT TERMINAL -->
-            <div class="w-80 bg-slate-950/98 border-l border-white/10 flex flex-col z-10 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
-                <div class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Глобальный лог</span>
-                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            <!-- SIDEBAR: INSPECTOR & LOG -->
+            <aside class="w-96 border-l border-white/10 glass flex flex-col z-30 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
+                <!-- Inspector Section -->
+                <div id="inspector" class="p-6 space-y-6 border-b border-white/5 hidden">
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-1">
+                            <div id="ins-tag" class="text-[9px] font-black text-slate-500 bg-white/5 px-1.5 py-0.5 rounded inline-block">TAG</div>
+                            <h2 id="ins-name" class="text-3xl font-black italic text-white leading-none truncate w-48">Country</h2>
+                        </div>
+                        <div id="ins-ideo-badge" class="px-2 py-1 bg-emerald-500/20 text-emerald-500 text-[9px] font-black uppercase rounded border border-emerald-500/30">Демократия</div>
+                    </div>
+
+                    <div class="flex gap-4 items-center">
+                        <div class="w-16 h-16 portrait-placeholder rounded-lg flex-shrink-0"></div>
+                        <div class="flex-grow">
+                            <span class="text-[9px] text-slate-500 uppercase font-bold block mb-1">Лидер</span>
+                            <div id="ins-leader" class="font-bold text-white text-sm">General Name</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="stat-card">
+                            <span class="text-[9px] text-slate-400 block mb-1">ДИВИЗИИ</span>
+                            <div class="flex justify-between items-end">
+                                <span id="ins-power" class="text-xl font-black italic">450</span>
+                                <span class="text-[10px] text-red-400 mb-0.5">▼ 2%</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="text-[9px] text-slate-400 block mb-1">СТАБИЛЬНОСТЬ</span>
+                            <div class="flex justify-between items-end">
+                                <span id="ins-stab" class="text-xl font-black italic">89%</span>
+                                <span class="text-[10px] text-emerald-400 mb-0.5">▲ 1%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px] font-bold">
+                            <span class="text-slate-500 uppercase">Отношения</span>
+                            <span id="ins-rel-text" class="text-blue-400">0 / 100</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div id="ins-rel-bar" class="h-full bg-blue-500 transition-all duration-500" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="handleDiplomacy('war')" class="btn-action py-3 bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/30 rounded-lg">Объявить войну</button>
+                        <button onclick="handleDiplomacy('trade')" class="btn-action py-3 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 border border-blue-500/30 rounded-lg">Улучшить связи</button>
+                    </div>
                 </div>
-                <div id="chat-log" class="flex-grow overflow-y-auto p-4 space-y-3 terminal-text text-[11px] leading-relaxed scroll-smooth"></div>
+
+                <!-- Global Log Section -->
+                <div class="flex-grow flex flex-col min-h-0">
+                    <div class="px-6 py-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Оперативный лог</span>
+                        <div class="flex gap-1">
+                            <div class="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <div class="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                    <div id="log-content" class="flex-grow overflow-y-auto p-6 space-y-4 font-mono text-[11px] terminal-log">
+                        <div class="text-emerald-500/40 italic">> Система готова. Ожидание приказов штаба...</div>
+                    </div>
+                </div>
                 
-                <div class="p-4 bg-slate-900/80 border-t border-white/10">
-                    <form id="ai-form" class="relative">
-                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">></div>
-                        <input type="text" id="ai-input" autocomplete="off"
-                            class="w-full bg-black/50 border border-white/10 rounded-lg py-2.5 pl-8 pr-4 text-white terminal-text text-[11px] focus:border-emerald-500/50 outline-none transition shadow-inner"
-                            placeholder="Введите директиву...">
-                    </form>
+                <!-- Bottom Status -->
+                <div class="p-4 bg-slate-900/50 border-t border-white/5 text-[9px] font-bold text-slate-500 uppercase tracking-tighter flex justify-between">
+                    <span>CPU: STABLE</span>
+                    <span>MEM: 94% FREE</span>
+                    <span id="fps-counter">LATENCY: 12ms</span>
                 </div>
-            </div>
+            </aside>
         </main>
     </div>
 
     <script>
-        // --- DATA & CONFIG ---
-        const firstNames = ["Александр", "Дмитрий", "Иван", "Сергей", "Михаил", "Виктор", "Николай", "Karl", "Joseph", "Winston", "Franklin", "Adolf", "Hirohito", "Benito"];
-        const lastNames = ["Волков", "Шмидт", "Смит", "Ли", "Морозов", "Ким", "Березов", "Дюпон", "Мюллер", "Родригес", "Черчилль", "Сталин", "Рузвельт"];
-        const ideologies = ["Демократия", "Авторитаризм", "Коммунизм", "Фашизм"];
-        const colors = {
-            "Демократия": "#3b82f6",
-            "Авторитаризм": "#6b7280",
-            "Коммунизм": "#ef4444",
-            "Фашизм": "#1e1b4b"
-        };
+        // --- CONFIG & DATA ---
+        const firstNames = ["Александр", "Николай", "Karl", "Winston", "Joseph", "Franklin", "Benito", "Charles", "Hideki", "Dmitry", "Ivan"];
+        const lastNames = ["Волков", "Schmidt", "Smith", "Churchill", "Stalin", "Roosevelt", "Mussolini", "De Gaulle", "Tojo", "Morozov"];
+        const ideos = [
+            { id: 'dem', name: 'Демократия', color: '#3b82f6', icon: '⚖️' },
+            { id: 'com', name: 'Коммунизм', color: '#ef4444', icon: '🚩' },
+            { id: 'fas', name: 'Фашизм', color: '#1e1b4b', icon: '🦅' },
+            { id: 'aut', name: 'Авторитаризм', color: '#64748b', icon: '🎖️' }
+        ];
 
-        let currentLang = 'ru';
-        let speed = 0;
-        let gameDate = new Date(1936, 0, 1);
         let countries = [];
-        let playerCountryId = null;
-        let selectedCountry = null;
-        let lastUpdateTime = 0;
-        let playerRes = { gold: 1000, oil: 50, steel: 100 };
+        let player = null;
+        let selected = null;
+        let gameSpeed = 0;
+        let gameDate = new Date(1936, 0, 1);
+        let playerResources = { gold: 1200, oil: 60, steel: 150 };
         let activeWars = [];
 
         const projection = d3.geoMercator().scale(150).translate([450, 350]);
         const path = d3.geoPath().projection(projection);
 
-        // --- INITIALIZATION ---
+        // --- CORE ENGINE ---
 
-        async function loadMaps() {
+        async function init() {
             try {
                 const res = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
                 const data = await res.json();
                 
                 countries = data.features.map(f => {
-                    const ideo = ideologies[Math.floor(Math.random() * ideologies.length)];
+                    const ideo = ideos[Math.floor(Math.random() * ideos.length)];
                     return {
                         id: f.id,
                         name: f.properties.name,
                         feature: f,
-                        power: Math.floor(Math.random() * 500) + 100,
-                        econ: Math.floor(Math.random() * 1000) + 200,
-                        stability: 70 + Math.floor(Math.random() * 30),
-                        warSupport: 10 + Math.floor(Math.random() * 50),
                         ideology: ideo,
-                        relations: 0,
                         leader: `${firstNames[Math.floor(Math.random()*firstNames.length)]} ${lastNames[Math.floor(Math.random()*lastNames.length)]}`,
-                        atWarWith: [],
-                        capturedTerritories: [],
-                        owner: f.id // Current owner of this geometry
+                        power: Math.floor(Math.random() * 600) + 150,
+                        econ: Math.floor(Math.random() * 2000) + 500,
+                        stability: 60 + Math.floor(Math.random() * 40),
+                        relations: 0,
+                        atWarWith: []
                     };
                 });
 
-                renderSelectionMap();
+                renderSetupMap();
             } catch (err) {
-                console.error("Map load failed", err);
+                console.error("Critical Failure:", err);
             }
         }
 
-        function renderSelectionMap() {
-            const svg = d3.select("#selection-map");
+        function renderSetupMap() {
+            const svg = d3.select("#svg-setup");
             const g = svg.append("g");
 
             g.selectAll("path")
@@ -360,154 +389,49 @@
                 .append("path")
                 .attr("d", path)
                 .attr("class", "country")
-                .attr("fill", d => colors[d.ideology])
-                .style("fill-opacity", 0.6)
+                .attr("fill", d => d.ideology.color)
+                .attr("fill-opacity", 0.5)
                 .on("click", function(e, d) {
-                    g.selectAll(".country").classed("selected", false);
+                    d3.selectAll("#svg-setup .country").classed("selected", false);
                     d3.select(this).classed("selected", true);
-                    updatePreview(d);
+                    updateSetupDetails(d);
                 });
 
-            const zoom = d3.zoom().scaleExtent([1, 10]).on("zoom", (e) => g.attr("transform", e.transform));
-            svg.call(zoom);
+            svg.call(d3.zoom().scaleExtent([1, 8]).on("zoom", (e) => g.attr("transform", e.transform)));
         }
 
-        function updatePreview(d) {
-            selectedCountry = d;
-            document.getElementById('preview-name').innerText = d.name;
-            document.getElementById('preview-power').innerText = d.power;
-            document.getElementById('preview-econ').innerText = d.econ;
-            document.getElementById('preview-leader').innerText = d.leader;
-            document.getElementById('preview-ideology').innerText = d.ideology;
+        function updateSetupDetails(d) {
+            selected = d;
+            document.getElementById('setup-name').innerText = d.name;
+            document.getElementById('setup-leader').innerText = d.leader;
+            document.getElementById('setup-ideology').innerText = `${d.ideology.icon} ${d.ideology.name}`;
+            document.getElementById('setup-power').innerText = d.power;
+            document.getElementById('setup-econ').innerText = (d.econ / 10).toFixed(1);
             
-            const btn = document.getElementById('start-btn');
+            const btn = document.getElementById('start-game-btn');
+            const btnBg = document.getElementById('btn-bg');
+            const btnText = document.getElementById('btn-text');
+            
             btn.disabled = false;
-            btn.className = "w-full py-5 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-500 transition-all transform hover:scale-[1.02] shadow-xl text-xs uppercase tracking-widest cursor-pointer";
+            btnBg.classList.remove('translate-y-full');
+            btnText.innerText = "ПРИНЯТЬ КОМАНДОВАНИЕ";
+            btnText.classList.add('text-white');
         }
 
-        function initializeGame() {
-            playerCountryId = selectedCountry.id;
+        function startGame() {
+            player = selected;
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-ui').classList.remove('hidden');
             
             renderMainMap();
-            updateResourceUI();
-            logAI(`[СИСТЕМА]: Командный протокол активирован. Вы приняли руководство над ${selectedCountry.name}.`, "text-emerald-400 font-bold");
-            logAI(`[РАЗВЕДКА]: Нынешний строй — ${selectedCountry.ideology}. Мир на грани кризиса.`, "text-slate-400");
+            addLog(`[СИСТЕМА]: Протокол инициализирован. Вы возглавили ${player.name}.`, "text-emerald-400 font-bold");
+            addLog(`[РАЗВЕДКА]: Нынешний лидер — ${player.leader}. Строй — ${player.ideology.name}.`, "text-blue-300");
             
-            lastUpdateTime = performance.now();
-            requestAnimationFrame(loop);
+            runGameLoop();
         }
-
-        // --- CORE GAME LOOP ---
-
-        function loop(currentTime) {
-            if (speed > 0) {
-                const deltaTime = currentTime - lastUpdateTime;
-                const speedMultipliers = [0, 1000, 500, 100]; // ms per game day
-                
-                if (deltaTime >= speedMultipliers[speed]) {
-                    gameDate.setDate(gameDate.getDate() + 1);
-                    updateDateUI();
-                    processEconomy();
-                    processAI();
-                    lastUpdateTime = currentTime;
-                }
-            } else {
-                lastUpdateTime = currentTime;
-            }
-            requestAnimationFrame(loop);
-        }
-
-        function updateDateUI() {
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            document.getElementById('date-display').innerText = gameDate.toLocaleDateString('en-GB', options).toUpperCase();
-        }
-
-        function processEconomy() {
-            const player = countries.find(c => c.id === playerCountryId);
-            // Every day 1% of economy / 30 for daily
-            const gainGold = Math.floor(player.econ * 0.05 / 30);
-            const gainOil = Math.floor(player.power * 0.01 / 30) + 1;
-            const gainSteel = Math.floor(player.econ * 0.02 / 30) + 1;
-
-            playerRes.gold += gainGold;
-            playerRes.oil += gainOil;
-            playerRes.steel += gainSteel;
-
-            updateResourceUI();
-        }
-
-        function updateResourceUI() {
-            document.getElementById('res-gold').innerText = Math.floor(playerRes.gold);
-            document.getElementById('res-oil').innerText = Math.floor(playerRes.oil);
-            document.getElementById('res-steel').innerText = Math.floor(playerRes.steel);
-        }
-
-        function processAI() {
-            // Random AI diplomacy
-            countries.forEach(c => {
-                if (c.id === playerCountryId) return;
-
-                // 1% chance for AI to do something daily
-                if (Math.random() < 0.005) {
-                    const target = countries[Math.floor(Math.random() * countries.length)];
-                    if (target.id === c.id) return;
-
-                    // AI logic: aggressive ideologies attack more
-                    if ((c.ideology === 'Фашизм' || c.ideology === 'Коммунизм') && c.power > target.power) {
-                        if (!c.atWarWith.includes(target.id)) {
-                            startWar(c, target);
-                        }
-                    }
-                }
-
-                // If at war, simulate battles
-                if (c.atWarWith.length > 0) {
-                    c.atWarWith.forEach(enemyId => {
-                        const enemy = countries.find(e => e.id === enemyId);
-                        if (enemy && Math.random() < 0.1) simulateBattle(c, enemy);
-                    });
-                }
-            });
-        }
-
-        function simulateBattle(c1, c2) {
-            // Basic battle logic
-            const strength1 = c1.power * (Math.random() + 0.5);
-            const strength2 = c2.power * (Math.random() + 0.5);
-
-            if (strength1 > strength2 * 1.5) {
-                // c1 wins a minor engagement
-                if (c1.id === playerCountryId || c2.id === playerCountryId) {
-                    logAI(`[ФРОНТ]: ${c1.name} прорывает оборону ${c2.name}!`, strength1 > strength2 * 2 ? "text-emerald-400" : "text-white");
-                }
-                c2.power -= 2;
-                c1.power += 1;
-            }
-        }
-
-        function startWar(c1, c2) {
-            if (c1.atWarWith.includes(c2.id)) return;
-            
-            c1.atWarWith.push(c2.id);
-            c2.atWarWith.push(c1.id);
-            
-            const isPlayerInvolved = c1.id === playerCountryId || c2.id === playerCountryId;
-            const color = isPlayerInvolved ? "text-red-500 font-black" : "text-orange-400 font-bold";
-            logAI(`[ВОЙНА]: ${c1.name} официально объявляет войну ${c2.name}!`, color);
-            
-            if (isPlayerInvolved) {
-                document.getElementById('global-war-status').classList.remove('hidden');
-            }
-
-            updateMapVisuals();
-        }
-
-        // --- MAP RENDERING & INTERACTION ---
 
         function renderMainMap() {
-            const svg = d3.select("#world-map");
+            const svg = d3.select("#svg-main");
             svg.selectAll("*").remove();
             const g = svg.append("g");
 
@@ -516,131 +440,192 @@
                 .enter()
                 .append("path")
                 .attr("d", path)
-                .attr("class", d => `country ${d.id === playerCountryId ? 'player-nation' : ''}`)
-                .attr("fill", d => colors[d.ideology])
+                .attr("class", d => `country ${d.id === player.id ? 'player' : ''}`)
+                .attr("fill", d => d.ideology.color)
                 .attr("fill-opacity", 0.7)
-                .on("mouseover", (e, d) => showInfo(d))
-                .on("click", (e, d) => zoomToCountry(d))
-                .on("mouseout", (e, d) => {
-                    if (selectedCountry && selectedCountry.id === d.id) return;
-                    // Keep info open if not strictly necessary to hide
-                });
+                .on("click", (e, d) => inspectCountry(d));
 
-            const zoom = d3.zoom().scaleExtent([1, 20]).on("zoom", (e) => g.attr("transform", e.transform));
-            svg.call(zoom);
+            svg.call(d3.zoom().scaleExtent([1, 20]).on("zoom", (e) => g.attr("transform", e.transform)));
         }
 
-        function updateMapVisuals() {
-            d3.selectAll(".country")
-                .classed("at-war", d => d.atWarWith.length > 0)
-                .transition()
-                .duration(500)
-                .attr("stroke", d => d.atWarWith.length > 0 ? "#ef4444" : "rgba(255,255,255,0.1)");
-        }
-
-        function zoomToCountry(d) {
-            const svg = d3.select("#world-map");
-            const bounds = path.bounds(d.feature);
-            const dx = bounds[1][0] - bounds[0][0];
-            const dy = bounds[1][1] - bounds[0][1];
-            const x = (bounds[0][0] + bounds[1][0]) / 2;
-            const y = (bounds[0][1] + bounds[1][1]) / 2;
-            const scale = Math.max(1, Math.min(12, 0.9 / Math.max(dx / 900, dy / 600)));
-            const translate = [450 - scale * x, 300 - scale * y];
-
-            svg.transition().duration(1000).call(
-                d3.zoom().transform, 
-                d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
-            );
+        function inspectCountry(d) {
+            selected = d;
+            const ins = document.getElementById('inspector');
+            ins.classList.remove('hidden');
             
-            selectedCountry = d;
-            showInfo(d);
-        }
+            document.getElementById('ins-name').innerText = d.name;
+            document.getElementById('ins-tag').innerText = d.id || "UNK";
+            document.getElementById('ins-leader').innerText = d.leader;
+            document.getElementById('ins-power').innerText = d.power;
+            document.getElementById('ins-stab').innerText = `${d.stability}%`;
+            
+            const badge = document.getElementById('ins-ideo-badge');
+            badge.innerText = d.ideology.name;
+            badge.style.color = d.ideology.color;
+            badge.style.borderColor = d.ideology.color + '44';
 
-        function showInfo(d) {
-            const panel = document.getElementById('country-info');
-            panel.classList.remove('opacity-0', 'translate-y-20');
-            panel.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-            
-            document.getElementById('info-name').innerText = d.name;
-            document.getElementById('info-tag').innerText = d.id;
-            document.getElementById('info-power').innerText = d.power;
-            document.getElementById('info-leader').innerText = d.leader;
-            document.getElementById('info-ideology').innerText = d.ideology;
-            document.getElementById('info-stability').innerText = `${d.stability}%`;
-            document.getElementById('info-war-support').innerText = `${d.warSupport}%`;
-            document.getElementById('info-relations').innerText = d.id === playerCountryId ? "---" : d.relations;
-            
-            const relBar = document.getElementById('rel-bar');
-            const relVal = ((d.relations + 100) / 200) * 100;
+            const relBar = document.getElementById('ins-rel-bar');
+            const relText = document.getElementById('ins-rel-text');
+            const relVal = d.id === player.id ? 100 : (d.relations + 100) / 2;
             relBar.style.width = `${relVal}%`;
+            relText.innerText = d.id === player.id ? "---" : `${d.relations} / 100`;
             
-            // Action buttons
-            const actionPanel = document.getElementById('action-panel');
-            actionPanel.classList.toggle('hidden', d.id === playerCountryId);
+            // Hide buttons if inspecting ourselves
+            document.querySelectorAll('.btn-action').forEach(b => b.style.display = d.id === player.id ? 'none' : 'block');
+        }
+
+        // --- GAME LOGIC ---
+
+        function runGameLoop() {
+            setInterval(() => {
+                if (gameSpeed === 0) return;
+
+                // 1. Update Date
+                gameDate.setDate(gameDate.getDate() + 1);
+                updateDateUI();
+
+                // 2. Economy
+                processEconomy();
+
+                // 3. AI Behavior
+                processAI();
+
+                // 4. Update Map Visuals
+                updateMapState();
+
+            }, gameSpeed === 2 ? 100 : 800);
+        }
+
+        function processEconomy() {
+            // Player gains based on econ power
+            const goldGain = (player.econ / 200) * gameSpeed;
+            const oilGain = (player.power / 500) * gameSpeed;
+            const steelGain = (player.econ / 400) * gameSpeed;
+
+            playerResources.gold += goldGain;
+            playerResources.oil += oilGain;
+            playerResources.steel += steelGain;
+
+            updateResourceUI();
+        }
+
+        function processAI() {
+            countries.forEach(c => {
+                if (c.id === player.id) return;
+
+                // AI events (1% daily chance)
+                if (Math.random() < 0.005) {
+                    const eventRoll = Math.random();
+                    if (eventRoll > 0.95) {
+                        // AI declares war on someone else
+                        const target = countries[Math.floor(Math.random() * countries.length)];
+                        if (target.id !== c.id && !c.atWarWith.includes(target.id)) {
+                            declareWar(c, target);
+                        }
+                    }
+                }
+
+                // If at war, simulate attrition
+                if (c.atWarWith.length > 0) {
+                    c.power -= (Math.random() * 0.5);
+                    if (c.power < 50) {
+                        // Peace negotiation
+                        const enemyId = c.atWarWith[0];
+                        const enemy = countries.find(e => e.id === enemyId);
+                        makePeace(c, enemy);
+                    }
+                }
+            });
+        }
+
+        function declareWar(attacker, defender) {
+            if (attacker.atWarWith.includes(defender.id)) return;
+            
+            attacker.atWarWith.push(defender.id);
+            defender.atWarWith.push(attacker.id);
+            
+            const isPlayerInvolved = (attacker.id === player.id || defender.id === player.id);
+            const color = isPlayerInvolved ? "text-red-500 font-black" : "text-orange-400";
+            
+            addLog(`[ВОЙНА]: ${attacker.name} атакует ${defender.name}!`, color);
+            
+            if (isPlayerInvolved) {
+                document.getElementById('war-alert').classList.remove('hidden');
+                d3.selectAll(".country").filter(d => d.id === attacker.id || d.id === defender.id).classed("at-war", true);
+            }
+        }
+
+        function makePeace(c1, c2) {
+            c1.atWarWith = c1.atWarWith.filter(id => id !== c2.id);
+            c2.atWarWith = c2.atWarWith.filter(id => id !== c1.id);
+            
+            addLog(`[МИР]: ${c1.name} и ${c2.name} подписали перемирие.`, "text-blue-400");
+            
+            if (c1.id === player.id || c2.id === player.id) {
+                document.getElementById('war-alert').classList.add('hidden');
+            }
+            updateMapState();
         }
 
         function handleDiplomacy(type) {
-            if (!selectedCountry) return;
-            const player = countries.find(c => c.id === playerCountryId);
+            if (!selected) return;
 
             if (type === 'war') {
-                if (playerRes.gold < 200) {
-                    logAI("[ОШИБКА]: Недостаточно средств для мобилизации.", "text-red-400");
+                if (playerResources.gold < 300) {
+                    addLog("[ОШИБКА]: Недостаточно средств для мобилизации.", "text-red-400");
                     return;
                 }
-                playerRes.gold -= 200;
-                startWar(player, selectedCountry);
+                playerResources.gold -= 300;
+                declareWar(player, selected);
             } else if (type === 'trade') {
-                if (playerRes.gold < 100) return;
-                playerRes.gold -= 100;
-                selectedCountry.relations += 15;
-                if (selectedCountry.relations > 100) selectedCountry.relations = 100;
-                logAI(`[ДИПЛОМАТИЯ]: Мы отправили делегацию в ${selectedCountry.name}. Отношения улучшены.`);
+                if (playerResources.gold < 150) return;
+                playerResources.gold -= 150;
+                selected.relations = Math.min(100, selected.relations + 25);
+                addLog(`[ДИПЛОМАТИЯ]: Улучшены отношения с ${selected.name}.`);
             }
-            showInfo(selectedCountry);
+            inspectCountry(selected);
             updateResourceUI();
         }
 
         // --- UI HELPERS ---
 
-        function changeSpeed(s) {
-            speed = s;
-            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`sp-${s}`).classList.add('active');
-            const labels = ["PAUSED", "NORMAL X1", "FAST X2", "BLITZ X5"];
-            document.getElementById('speed-label').innerText = labels[s];
+        function updateDateUI() {
+            const opt = { day: '2-digit', month: 'short', year: 'numeric' };
+            document.getElementById('game-date').innerText = gameDate.toLocaleDateString('en-GB', opt).toUpperCase();
         }
 
-        function logAI(msg, color = "text-slate-400") {
-            const log = document.getElementById('chat-log');
-            const div = document.createElement('div');
-            div.className = `${color} border-l-2 border-current pl-2 py-1`;
-            div.innerHTML = `<span class="opacity-30 text-[9px] block">${gameDate.toLocaleDateString()}</span>${msg}`;
-            log.appendChild(div);
+        function updateResourceUI() {
+            document.getElementById('res-gold').innerText = Math.floor(playerResources.gold);
+            document.getElementById('res-oil').innerText = Math.floor(playerResources.oil);
+            document.getElementById('res-steel').innerText = Math.floor(playerResources.steel);
+        }
+
+        function setSpeed(s) {
+            gameSpeed = s;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('bg-emerald-600/20', 'text-emerald-500', 'border-emerald-500/50'));
+            document.getElementById(`btn-speed-${s}`).classList.add('bg-emerald-600/20', 'text-emerald-500');
+            document.getElementById('speed-label').innerText = s === 0 ? "PAUSED" : s === 1 ? "NORMAL 1X" : "BLITZ 5X";
+            addLog(`[СИСТЕМА]: Скорость времени установлена на ${s}x`);
+        }
+
+        function addLog(msg, colorClass = "text-slate-400") {
+            const log = document.getElementById('log-content');
+            const entry = document.createElement('div');
+            entry.className = `${colorClass} py-1`;
+            entry.innerHTML = `<span class="opacity-30 text-[9px] mr-2">${gameDate.toLocaleDateString()}</span> ${msg}`;
+            log.appendChild(entry);
             log.scrollTop = log.scrollHeight;
         }
 
-        document.getElementById('ai-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const val = document.getElementById('ai-input').value.trim();
-            if (!val) return;
-            document.getElementById('ai-input').value = '';
-            
-            const lower = val.toLowerCase();
-            logAI(`Вы: ${val}`, "text-white");
+        function updateMapState() {
+            d3.selectAll(".country")
+                .classed("at-war", d => d.atWarWith.length > 0)
+                .transition()
+                .duration(500)
+                .attr("fill", d => d.atWarWith.length > 0 ? "#450a0a" : d.ideology.color);
+        }
 
-            // Handle basic commands
-            if (lower.includes("помощь") || lower.includes("help")) {
-                logAI("Доступные команды: СТАТУС, ВОЙНА [Страна], МИР, РЕСУРСЫ.");
-            } else if (lower.includes("ресурс")) {
-                logAI(`Бюджет: ${playerRes.gold} | Нефть: ${playerRes.oil} | Сталь: ${playerRes.steel}`);
-            } else {
-                logAI("[ИИ]: Команда принята к обработке. Ожидайте подтверждения штаба.");
-            }
-        });
-
-        window.onload = loadMaps;
+        window.onload = init;
     </script>
 </body>
 </html>
