@@ -83,9 +83,21 @@
         }
 
         /* --- КАРТА --- */
-        .province { stroke: #000; stroke-width: 0.3; transition: fill 0.2s; }
+        .province { stroke: #000; stroke-width: 0.3; transition: fill 0.5s ease; }
         .province:hover { stroke: #fff; stroke-width: 1; cursor: pointer; filter: brightness(1.2); }
         .province.selected { stroke: var(--hoi-gold); stroke-width: 2; }
+        
+        .war-active {
+            stroke: #ff0000;
+            stroke-width: 1.5;
+            animation: warPulse 2s infinite;
+        }
+        
+        @keyframes warPulse {
+            0% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.3; }
+            100% { stroke-opacity: 1; }
+        }
 
         /* Идеологии */
         .ideo-fascism { color: #a37256; }
@@ -95,7 +107,7 @@
 
         /* Модальные окна */
         .modal-overlay {
-            position: fixed; inset: 0; bg-black/80; backdrop-filter: blur(5px);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
             z-index: 2000; display: none; align-items: center; justify-content: center;
         }
     </style>
@@ -113,7 +125,7 @@
             <div class="w-1/4 border-r border-gray-700 flex flex-col bg-[#16181b]">
                 <div class="p-4 border-b border-gray-700 bg-[#202328]">
                     <h1 class="hoi-header text-3xl mb-1">RUINA LEADER</h1>
-                    <p class="text-[10px] uppercase text-gray-500 font-bold tracking-widest">Grand Strategy v2.0</p>
+                    <p class="text-[10px] uppercase text-gray-500 font-bold tracking-widest">Global Iron Strategy</p>
                 </div>
                 <div class="p-2 bg-black/20">
                     <input type="text" id="country-search" placeholder="Поиск державы..." class="w-full bg-[#0a0a0a] border border-gray-600 p-2 text-xs text-gray-300 outline-none focus:border-yellow-600">
@@ -138,7 +150,7 @@
                             <h2 id="p-name" class="text-6xl font-black text-white uppercase tracking-tighter shadow-black drop-shadow-lg">РОССИЯ</h2>
                             <div class="flex items-center gap-3 mt-2">
                                 <span id="p-ideology" class="px-2 py-0.5 bg-black/50 border border-gray-600 text-xs font-bold uppercase text-gray-300">Авторитаризм</span>
-                                <span class="text-xs text-gray-500">СЦЕНАРИЙ: 2000</span>
+                                <span class="text-xs text-gray-500">СЦЕНАРИЙ: 2000 ГОД</span>
                             </div>
                         </div>
                         <img id="p-flag" class="w-40 h-24 border-4 border-[#24272b] shadow-2xl">
@@ -221,7 +233,7 @@
             </div>
 
             <div class="flex items-center gap-4">
-                <div class="text-xs font-bold bg-black/30 px-3 py-1 rounded text-gray-400">
+                <div class="text-xs font-bold bg-black/30 px-3 py-1 rounded text-gray-400 font-mono">
                     <span id="ui-date">1 ЯНВ 2000</span>
                 </div>
                 <button class="hoi-btn py-1 px-3 text-xs" onclick="toggleMenu()">МЕНЮ</button>
@@ -254,6 +266,17 @@
                                     <span id="diplo-ideology" class="px-2 py-0.5 bg-white/5 border border-white/10 rounded">Демократия</span>
                                     <span id="diplo-opinion" class="px-2 py-0.5 bg-green-900/30 text-green-400 border border-green-800 rounded">+10</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Статус войны -->
+                        <div id="war-status-bar" class="hidden mb-2">
+                            <div class="text-[10px] text-red-500 font-bold mb-1 flex justify-between">
+                                <span>ПРОГРЕСС ОККУПАЦИИ</span>
+                                <span id="war-progress-text">0%</span>
+                            </div>
+                            <div class="w-full h-2 bg-black border border-red-900">
+                                <div id="war-progress-bar" class="h-full bg-red-600 w-0"></div>
                             </div>
                         </div>
 
@@ -293,11 +316,11 @@
         </main>
 
         <!-- Лог событий -->
-        <div id="event-log" class="absolute bottom-2 left-2 w-80 max-h-40 overflow-y-auto pointer-events-none space-y-1 text-[10px] font-mono p-2"></div>
+        <div id="event-log" class="absolute bottom-2 left-2 w-80 max-h-40 overflow-y-auto pointer-events-none space-y-1 text-[10px] font-mono p-2 bg-black/50 border border-white/10 rounded"></div>
     </div>
 
     <!-- МОДАЛКА ВОЙНЫ (CASUS BELLI) -->
-    <div id="war-modal" class="fixed inset-0 bg-black/90 z-[2000] hidden items-center justify-center backdrop-blur-sm">
+    <div id="war-modal" class="modal-overlay hidden">
         <div class="hoi-panel w-[600px] p-1 shadow-[0_0_50px_rgba(201,79,79,0.2)] border-red-900">
             <div class="bg-[#1a0505] p-6 border border-red-900/30">
                 <h2 class="hoi-header text-3xl text-red-500 text-center mb-2">ОБЪЯВЛЕНИЕ ВОЙНЫ</h2>
@@ -321,11 +344,10 @@
     </div>
 
     <!-- МОДАЛКА ЛЕНД-ЛИЗА -->
-    <div id="lend-lease-modal" class="fixed inset-0 bg-black/80 z-[2000] hidden items-center justify-center">
+    <div id="lend-lease-modal" class="modal-overlay hidden">
         <div class="hoi-panel w-[500px] p-6">
             <h3 class="hoi-header text-2xl text-[#e2c08d] mb-4">ЛЕНД-ЛИЗ</h3>
             <p class="text-xs text-gray-400 mb-4">Отправка военного снаряжения и ресурсов союзнику.</p>
-            
             <div class="space-y-4 mb-6">
                 <div>
                     <div class="flex justify-between text-xs mb-1"><span>Пехотное снаряжение</span><span>1000 ед.</span></div>
@@ -336,7 +358,6 @@
                     <input type="range" class="w-full accent-[#e2c08d] h-2 bg-black rounded appearance-none cursor-pointer">
                 </div>
             </div>
-            
             <div class="flex justify-end gap-2">
                 <button onclick="closeModal('lend-lease-modal')" class="hoi-btn">Закрыть</button>
                 <button onclick="sendLendLease()" class="hoi-btn hoi-btn-green">Отправить конвой</button>
@@ -345,52 +366,77 @@
     </div>
 
     <script>
-        const API_KEY = ""; // Вставьте сюда ключ, если есть, иначе будет эмуляция
+        // --- ИСТОРИЧЕСКАЯ БАЗА ЛИДЕРОВ (2000-2026) ---
+        const HISTORY = {
+            "RUS": [
+                { y: 2000, n: "Владимир Путин", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Vladimir_Putin_-_2000-11-15.jpg/220px-Vladimir_Putin_-_2000-11-15.jpg" },
+                { y: 2008, n: "Дмитрий Медведев", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Dmitry_Medvedev_2008.jpg/220px-Dmitry_Medvedev_2008.jpg" },
+                { y: 2012, n: "Владимир Путин", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Vladimir_Putin_2024.jpg/220px-Vladimir_Putin_2024.jpg" }
+            ],
+            "USA": [
+                { y: 2000, n: "Билл Клинтон", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/220px-Bill_Clinton.jpg" },
+                { y: 2001, n: "Джордж Буш мл.", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/George-W-Bush.jpg/220px-George-W-Bush.jpg" },
+                { y: 2009, n: "Барак Обама", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/220px-President_Barack_Obama.jpg" },
+                { y: 2017, n: "Дональд Трамп", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg" },
+                { y: 2021, n: "Джо Байден", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/220px-Joe_Biden_presidential_portrait.jpg" },
+                { y: 2025, n: "Дональд Трамп", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg" }
+            ],
+            "UKR": [
+                { y: 2000, n: "Леонид Кучма", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Leonid_Kuchma_2003.jpg/220px-Leonid_Kuchma_2003.jpg" },
+                { y: 2005, n: "Виктор Ющенко", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Viktor_Yushchenko_2005.jpg/220px-Viktor_Yushchenko_2005.jpg" },
+                { y: 2010, n: "Виктор Янукович", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Viktor_Yanukovych_2010.jpg/220px-Viktor_Yanukovych_2010.jpg" },
+                { y: 2014, n: "Петр Порошенко", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Petro_Poroshenko_official_portrait.jpg/220px-Petro_Poroshenko_official_portrait.jpg" },
+                { y: 2019, n: "Владимир Зеленский", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Volodymyr_Zelensky_Official_Portrait.jpg/220px-Volodymyr_Zelensky_Official_Portrait.jpg" }
+            ],
+            "DEU": [
+                { y: 2000, n: "Герхард Шрёдер", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Gerhard_Schroeder_2005.jpg/220px-Gerhard_Schroeder_2005.jpg" },
+                { y: 2005, n: "Ангела Меркель", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Angela_Merkel_2010.jpg/220px-Angela_Merkel_2010.jpg" },
+                { y: 2021, n: "Олаф Шольц", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Olaf_Scholz_2022.jpg/220px-Olaf_Scholz_2022.jpg" }
+            ]
+        };
 
         // --- БАЗА ДАННЫХ 30 СТРАН ---
         const COUNTRIES = [
-            // Мажоры
-            { id: "RUS", name: "Россия", leader: "Владимир Путин", ideology: "neutrality", gdp: 260, army: 1200, stab: 65, color: "#4a6b4a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Vladimir_Putin_2024.jpg/220px-Vladimir_Putin_2024.jpg", flag: "ru", desc: "Стремление восстановить влияние на постсоветском пространстве." },
-            { id: "USA", name: "США", leader: "Билл Клинтон", ideology: "democracy", gdp: 10200, army: 1400, stab: 90, color: "#1a3a6a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/220px-Bill_Clinton.jpg", flag: "us", desc: "Мировой гегемон, гарант демократии и свободной торговли." },
-            { id: "CHN", name: "Китай", leader: "Цзян Цзэминь", ideology: "communism", gdp: 1200, army: 2200, stab: 88, color: "#8a2a2a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Jiang_Zemin_2002.jpg/220px-Jiang_Zemin_2002.jpg", flag: "cn", desc: "Спящий дракон, наращивающий экономическую и военную мощь." },
-            { id: "DEU", name: "Германия", leader: "Герхард Шрёдер", ideology: "democracy", gdp: 1950, army: 300, stab: 85, color: "#333", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Gerhard_Schroeder_2005.jpg/220px-Gerhard_Schroeder_2005.jpg", flag: "de", desc: "Экономическое сердце Европы." },
-            { id: "GBR", name: "Великобритания", leader: "Тони Блэр", ideology: "democracy", gdp: 1600, army: 210, stab: 80, color: "#384a8c", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Tony_Blair_%282002%29.jpg/220px-Tony_Blair_%282002%29.jpg", flag: "gb", desc: "Верный союзник США с сильным флотом." },
-            { id: "FRA", name: "Франция", leader: "Жак Ширак", ideology: "democracy", gdp: 1500, army: 250, stab: 75, color: "#385e8c", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Jacques_Chirac_2003.jpg/220px-Jacques_Chirac_2003.jpg", flag: "fr", desc: "Лидер ЕС, стремящийся к независимой политике." },
-            
-            // Региональные
-            { id: "UKR", name: "Украина", leader: "Леонид Кучма", ideology: "neutrality", gdp: 32, army: 300, stab: 55, color: "#3d6e8a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Leonid_Kuchma_2003.jpg/220px-Leonid_Kuchma_2003.jpg", flag: "ua", desc: "Балансирует между Востоком и Западом." },
-            { id: "JPN", name: "Япония", leader: "Ёсиро Мори", ideology: "democracy", gdp: 4800, army: 240, stab: 95, color: "#8c8c8c", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Mori_Yoshiro_20000721.jpg/220px-Mori_Yoshiro_20000721.jpg", flag: "jp", desc: "Технологический гигант с сильным флотом." },
-            { id: "IND", name: "Индия", leader: "Атал Ваджпаи", ideology: "democracy", gdp: 460, army: 1300, stab: 60, color: "#a65c1a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Atal_Bihari_Vajpayee.jpg/220px-Atal_Bihari_Vajpayee.jpg", flag: "in", desc: "Растущая ядерная держава." },
-            { id: "ITA", name: "Италия", leader: "Карло Чампи", ideology: "democracy", gdp: 1100, army: 190, stab: 65, color: "#3a7a4a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Carlo_Azeglio_Ciampi_1999.jpg/220px-Carlo_Azeglio_Ciampi_1999.jpg", flag: "it", desc: "Культурный центр с нестабильной политикой." },
-            { id: "TUR", name: "Турция", leader: "Ахмет Сезер", ideology: "neutrality", gdp: 270, army: 500, stab: 55, color: "#7a2a2a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Ahmet_Necdet_Sezer_2002.jpg/220px-Ahmet_Necdet_Sezer_2002.jpg", flag: "tr", desc: "Страж проливов и мост между Европой и Азией." },
-            { id: "IRN", name: "Иран", leader: "Мохаммад Хатами", ideology: "fascism", gdp: 100, army: 550, stab: 50, color: "#3a5a4a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Mohammad_Khatami_2001.jpg/220px-Mohammad_Khatami_2001.jpg", flag: "ir", desc: "Исламская республика в противостоянии с Западом." },
-            { id: "IRQ", name: "Ирак", leader: "Саддам Хусейн", ideology: "fascism", gdp: 40, army: 400, stab: 45, color: "#5a5a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Saddam_Hussein_portrait_2002.jpg/220px-Saddam_Hussein_portrait_2002.jpg", flag: "iq", desc: "Режим под санкциями, обладающий нефтью." },
-            { id: "SAU", name: "Сауд. Аравия", leader: "Король Фахд", ideology: "fascism", gdp: 190, army: 200, stab: 80, color: "#2a5a2a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Fahd_bin_Abdulaziz_Al_Saud_1985.jpg/220px-Fahd_bin_Abdulaziz_Al_Saud_1985.jpg", flag: "sa", desc: "Нефтяная монархия и союзник США." },
-            { id: "ISR", name: "Израиль", leader: "Эхуд Барак", ideology: "democracy", gdp: 130, army: 170, stab: 70, color: "#2a3a6a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ehud_Barak_2000.jpg/220px-Ehud_Barak_2000.jpg", flag: "il", desc: "Технологичный форпост в окружении врагов." },
-            
-            // Другие
-            { id: "BRA", name: "Бразилия", leader: "Ф. Кардозу", ideology: "democracy", gdp: 650, army: 300, stab: 60, color: "#2a6a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Fhc-1.jpg/220px-Fhc-1.jpg", flag: "br", desc: "Лидер Южной Америки." },
-            { id: "KAZ", name: "Казахстан", leader: "Н. Назарбаев", ideology: "neutrality", gdp: 20, army: 60, stab: 80, color: "#2a6a6a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Nursultan_Nazarbayev_2013.jpg/220px-Nursultan_Nazarbayev_2013.jpg", flag: "kz", desc: "Богатые ресурсы и многовекторная политика." },
-            { id: "BLR", name: "Беларусь", leader: "А. Лукашенко", ideology: "fascism", gdp: 12, army: 50, stab: 85, color: "#3a6a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Alexander_Lukashenko_2018.jpg/220px-Alexander_Lukashenko_2018.jpg", flag: "by", desc: "Верный союзник России." },
-            { id: "PRK", name: "КНДР", leader: "Ким Чен Ир", ideology: "communism", gdp: 10, army: 1100, stab: 95, color: "#7a1a1a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Kim_Jong_Il_2000.jpg/220px-Kim_Jong_Il_2000.jpg", flag: "kp", desc: "Изолированное государство-крепость." },
-            { id: "KOR", name: "Юж. Корея", leader: "Ким Дэ Чжун", ideology: "democracy", gdp: 560, army: 600, stab: 80, color: "#1a2a5a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Kim_Dae-jung_2000.jpg/220px-Kim_Dae-jung_2000.jpg", flag: "kr", desc: "Азиатский тигр." },
-            { id: "CAN", name: "Канада", leader: "Жан Кретьен", ideology: "democracy", gdp: 740, army: 60, stab: 90, color: "#8a2a2a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Jean_Chretien_1994.jpg/220px-Jean_Chretien_1994.jpg", flag: "ca", desc: "Мирный северный сосед США." },
-            { id: "AUS", name: "Австралия", leader: "Джон Говард", ideology: "democracy", gdp: 415, army: 55, stab: 90, color: "#1a2a6a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/John_Howard_2003.jpg/220px-John_Howard_2003.jpg", flag: "au", desc: "Страж Тихого океана." },
-            { id: "POL", name: "Польша", leader: "А. Квасьневский", ideology: "democracy", gdp: 170, army: 120, stab: 75, color: "#8a4a4a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Aleksander_Kwasniewski_2002.jpg/220px-Aleksander_Kwasniewski_2002.jpg", flag: "pl", desc: "Восточный фланг НАТО." },
-            { id: "ESP", name: "Испания", leader: "Хосе Аснар", ideology: "democracy", gdp: 600, army: 130, stab: 70, color: "#8a7a2a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Jos%C3%A9_Mar%C3%ADa_Aznar_2003.jpg/220px-Jos%C3%A9_Mar%C3%ADa_Aznar_2003.jpg", flag: "es", desc: "Развивающаяся экономика Юга Европы." },
-            { id: "SWE", name: "Швеция", leader: "Й. Перссон", ideology: "democracy", gdp: 260, army: 30, stab: 95, color: "#2a4a7a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/G%C3%B6ran_Persson_2006-03-24.jpg/220px-G%C3%B6ran_Persson_2006-03-24.jpg", flag: "se", desc: "Скандинавский нейтралитет." },
-            { id: "IDN", name: "Индонезия", leader: "А. Вахид", ideology: "democracy", gdp: 165, army: 300, stab: 45, color: "#8a3a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Abdurrahman_Wahid_2000.jpg/220px-Abdurrahman_Wahid_2000.jpg", flag: "id", desc: "Крупнейшая мусульманская демократия." },
-            { id: "PAK", name: "Пакистан", leader: "П. Мушарраф", ideology: "fascism", gdp: 75, army: 600, stab: 40, color: "#2a5a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Pervez_Musharraf_2004.jpg/220px-Pervez_Musharraf_2004.jpg", flag: "pk", desc: "Ядерная держава в состоянии кризиса." },
-            { id: "VNM", name: "Вьетнам", leader: "Тран Дук Луонг", ideology: "communism", gdp: 33, army: 480, stab: 80, color: "#8a1a1a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Tran_Duc_Luong_2005.jpg/220px-Tran_Duc_Luong_2005.jpg", flag: "vn", desc: "Азиатский тигр на старте." },
-            { id: "ARG", name: "Аргентина", leader: "Ф. де ла Руа", ideology: "democracy", gdp: 285, army: 70, stab: 40, color: "#3a7a9a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Fernando_de_la_Rua_2000.jpg/220px-Fernando_de_la_Rua_2000.jpg", flag: "ar", desc: "Экономические трудности." },
-            { id: "EGY", name: "Египет", leader: "Хосни Мубарак", ideology: "neutrality", gdp: 100, army: 450, stab: 60, color: "#6a5a3a", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Hosni_Mubarak_2009.jpg/220px-Hosni_Mubarak_2009.jpg", flag: "eg", desc: "Лидер арабского мира." }
+            { id: "RUS", name: "Россия", flag: "ru", gdp: 260, army: 1200, stab: 65, color: "#4a6b4a", ideology: "NEUTRALITY", desc: "Стремление восстановить влияние." },
+            { id: "USA", name: "США", flag: "us", gdp: 10200, army: 1400, stab: 90, color: "#1a3a6a", ideology: "DEMOCRACY", desc: "Мировой гегемон." },
+            { id: "CHN", name: "Китай", flag: "cn", gdp: 1200, army: 2200, stab: 88, color: "#8a2a2a", ideology: "COMMUNISM", desc: "Спящий дракон." },
+            { id: "DEU", name: "Германия", flag: "de", gdp: 1950, army: 300, stab: 85, color: "#333", ideology: "DEMOCRACY", desc: "Экономическое сердце Европы." },
+            { id: "GBR", name: "Великобритания", flag: "gb", gdp: 1600, army: 210, stab: 80, color: "#384a8c", ideology: "DEMOCRACY", desc: "Верный союзник США." },
+            { id: "FRA", name: "Франция", flag: "fr", gdp: 1500, army: 250, stab: 75, color: "#385e8c", ideology: "DEMOCRACY", desc: "Лидер ЕС." },
+            { id: "UKR", name: "Украина", flag: "ua", gdp: 32, army: 300, stab: 55, color: "#3d6e8a", ideology: "NEUTRALITY", desc: "Баланс между Востоком и Западом." },
+            { id: "JPN", name: "Япония", flag: "jp", gdp: 4800, army: 240, stab: 95, color: "#8c8c8c", ideology: "DEMOCRACY", desc: "Технологический гигант." },
+            { id: "IND", name: "Индия", flag: "in", gdp: 460, army: 1300, stab: 60, color: "#a65c1a", ideology: "DEMOCRACY", desc: "Растущая держава." },
+            { id: "ITA", name: "Италия", flag: "it", gdp: 1100, army: 190, stab: 65, color: "#3a7a4a", ideology: "DEMOCRACY", desc: "Культурный центр." },
+            { id: "TUR", name: "Турция", flag: "tr", gdp: 270, army: 500, stab: 55, color: "#7a2a2a", ideology: "NEUTRALITY", desc: "Страж проливов." },
+            { id: "IRN", name: "Иран", flag: "ir", gdp: 100, army: 550, stab: 50, color: "#3a5a4a", ideology: "FASCISM", desc: "Исламская республика." },
+            { id: "IRQ", name: "Ирак", flag: "iq", gdp: 40, army: 400, stab: 45, color: "#5a5a3a", ideology: "FASCISM", desc: "Режим под санкциями." },
+            { id: "SAU", name: "Сауд. Аравия", flag: "sa", gdp: 190, army: 200, stab: 80, color: "#2a5a2a", ideology: "FASCISM", desc: "Нефтяная монархия." },
+            { id: "ISR", name: "Израиль", flag: "il", gdp: 130, army: 170, stab: 70, color: "#2a3a6a", ideology: "DEMOCRACY", desc: "Технологичный форпост." },
+            { id: "BRA", name: "Бразилия", flag: "br", gdp: 650, army: 300, stab: 60, color: "#2a6a3a", ideology: "DEMOCRACY", desc: "Лидер Южной Америки." },
+            { id: "KAZ", name: "Казахстан", flag: "kz", gdp: 20, army: 60, stab: 80, color: "#2a6a6a", ideology: "NEUTRALITY", desc: "Богатые ресурсы." },
+            { id: "BLR", name: "Беларусь", flag: "by", gdp: 12, army: 50, stab: 85, color: "#3a6a3a", ideology: "FASCISM", desc: "Верный союзник России." },
+            { id: "PRK", name: "КНДР", flag: "kp", gdp: 10, army: 1100, stab: 95, color: "#7a1a1a", ideology: "COMMUNISM", desc: "Изолированное государство." },
+            { id: "KOR", name: "Юж. Корея", flag: "kr", gdp: 560, army: 600, stab: 80, color: "#1a2a5a", ideology: "DEMOCRACY", desc: "Азиатский тигр." },
+            { id: "CAN", name: "Канада", flag: "ca", gdp: 740, army: 60, stab: 90, color: "#8a2a2a", ideology: "DEMOCRACY", desc: "Мирный сосед США." },
+            { id: "AUS", name: "Австралия", flag: "au", gdp: 415, army: 55, stab: 90, color: "#1a2a6a", ideology: "DEMOCRACY", desc: "Страж Тихого океана." },
+            { id: "POL", name: "Польша", flag: "pl", gdp: 170, army: 120, stab: 75, color: "#8a4a4a", ideology: "DEMOCRACY", desc: "Восточный фланг." },
+            { id: "ESP", name: "Испания", flag: "es", gdp: 600, army: 130, stab: 70, color: "#8a7a2a", ideology: "DEMOCRACY", desc: "Развивающаяся экономика." },
+            { id: "SWE", name: "Швеция", flag: "se", gdp: 260, army: 30, stab: 95, color: "#2a4a7a", ideology: "DEMOCRACY", desc: "Скандинавский нейтралитет." },
+            { id: "IDN", name: "Индонезия", flag: "id", gdp: 165, army: 300, stab: 45, color: "#8a3a3a", ideology: "DEMOCRACY", desc: "Крупнейшая мусульманская демократия." },
+            { id: "PAK", name: "Пакистан", flag: "pk", gdp: 75, army: 600, stab: 40, color: "#2a5a3a", ideology: "FASCISM", desc: "Ядерная держава." },
+            { id: "VNM", name: "Вьетнам", flag: "vn", gdp: 33, army: 480, stab: 80, color: "#8a1a1a", ideology: "COMMUNISM", desc: "Азиатский тигр на старте." },
+            { id: "ARG", name: "Аргентина", flag: "ar", gdp: 285, army: 70, stab: 40, color: "#3a7a9a", ideology: "DEMOCRACY", desc: "Экономические трудности." },
+            { id: "EGY", name: "Египет", flag: "eg", gdp: 100, army: 450, stab: 60, color: "#6a5a3a", ideology: "NEUTRALITY", desc: "Лидер арабского мира." }
         ];
 
         let gameState = {
             player: null,
             target: null,
-            date: new Date(2000, 0, 1)
+            date: new Date(2000, 0, 1),
+            activeWars: {} // { targetId: progress (0-100) }
         };
+
+        let timer = null;
 
         // --- ИНИЦИАЛИЗАЦИЯ ---
         window.onload = async () => {
@@ -419,32 +465,31 @@
                     .attr("d", path)
                     .attr("class", "province")
                     .attr("id", d => {
-                        // Попытка маппинга по названию (для демо)
-                        const dbMatch = COUNTRIES.find(c => c.name === d.properties.name || mapName(d.properties.name) === c.id);
-                        return dbMatch ? dbMatch.id : "UNK";
+                        // Маппинг GeoJSON -> ID
+                        const found = COUNTRIES.find(c => c.name === d.properties.name || mapName(d.properties.name) === c.id);
+                        return found ? found.id : "UNK_" + d.id;
                     })
                     .attr("fill", d => {
-                        const dbMatch = COUNTRIES.find(c => c.name === d.properties.name || mapName(d.properties.name) === c.id);
-                        return dbMatch ? dbMatch.color : "#1a1e24";
+                        const found = COUNTRIES.find(c => c.name === d.properties.name || mapName(d.properties.name) === c.id);
+                        return found ? found.color : "#1a1e24";
                     })
                     .on("click", function(e, d) {
-                        const dbMatch = COUNTRIES.find(c => c.name === d.properties.name || mapName(d.properties.name) === c.id);
-                        if (dbMatch) {
-                            if (!gameState.player) selectCountry(dbMatch); // В меню
-                            else openDiplomacy(dbMatch); // В игре
+                        const id = this.getAttribute("id");
+                        if (!id.startsWith("UNK")) {
+                            if (!gameState.player) selectCountry(COUNTRIES.find(c => c.id === id));
+                            else openDiplomacy(COUNTRIES.find(c => c.id === id));
                         }
                     });
 
             } catch (e) { console.error("Map Error", e); }
         }
 
-        // Вспомогательная функция маппинга названий GeoJSON к ID
         function mapName(name) {
             const map = { "Russia": "RUS", "United States of America": "USA", "China": "CHN", "Germany": "DEU", "Ukraine": "UKR", "France": "FRA", "United Kingdom": "GBR", "Japan": "JPN", "India": "IND", "Brazil": "BRA", "Italy": "ITA", "Turkey": "TUR", "Kazakhstan": "KAZ", "Belarus": "BLR", "Canada": "CAN", "Australia": "AUS", "Spain": "ESP", "Poland": "POL", "Sweden": "SWE", "Norway": "NOR", "Finland": "FIN", "Iran": "IRN", "Iraq": "IRQ", "Saudi Arabia": "SAU", "Israel": "ISR", "South Korea": "KOR", "North Korea": "PRK", "Egypt": "EGY", "Pakistan": "PAK", "Vietnam": "VNM", "Indonesia": "IDN", "Argentina": "ARG" };
             return map[name];
         }
 
-        // --- МЕНЮ ВЫБОРА ---
+        // --- МЕНЮ ---
         function renderList() {
             const list = document.getElementById('country-list');
             COUNTRIES.forEach(c => {
@@ -464,18 +509,16 @@
 
         function selectCountry(c) {
             gameState.player = c;
+            const leader = getLeader(c.id, 2000);
             
             document.getElementById('p-name').innerText = c.name;
             document.getElementById('p-ideology').innerText = c.ideology;
             document.getElementById('p-flag').src = `https://flagcdn.com/w160/${c.flag}.png`;
-            
-            document.getElementById('p-leader-name').innerText = c.leader;
-            document.getElementById('p-leader-img').src = c.img;
+            document.getElementById('p-leader-name').innerText = leader.n;
+            document.getElementById('p-leader-img').src = leader.i;
             document.getElementById('p-desc').innerText = c.desc;
-            
             document.getElementById('p-gdp').innerText = `$${c.gdp}B`;
             document.getElementById('p-army').innerText = `${c.army}K`;
-            document.getElementById('p-stab').innerText = `${c.stab}%`;
             
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('preview-content').classList.remove('hidden');
@@ -485,21 +528,72 @@
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-ui').classList.remove('hidden');
             
-            // Заполнение UI
             const p = gameState.player;
+            const leader = getLeader(p.id, 2000);
+            
             document.getElementById('ui-flag').src = `https://flagcdn.com/w40/${p.flag}.png`;
-            document.getElementById('ui-name').innerText = p.name;
-            document.getElementById('ui-leader-name').innerText = p.leader;
-            document.getElementById('ui-ideology-name').innerText = p.ideology;
+            document.getElementById('ui-country').innerText = p.name;
+            document.getElementById('ui-leader-name').innerText = leader.n;
             
-            document.getElementById('res-money').innerText = `$${p.gdp / 5}B`; // Условно бюджет
-            document.getElementById('res-army').innerText = `${p.army}K`;
-            document.getElementById('res-stab').innerText = `${p.stab}%`;
+            document.getElementById('res-pp').innerText = 150;
+            document.getElementById('res-money').innerText = `$${p.gdp/5}B`;
             
+            setInterval(gameLoop, 1000); // 1 сек = 1 день
             addEvent("Вы приняли управление государством. Мир ожидает ваших решений.");
         }
 
-        // --- ДИПЛОМАТИЯ И ВОЙНА ---
+        // --- ГЕЙМПЛЕЙ ---
+        function gameLoop() {
+            // Дата
+            gameState.date.setDate(gameState.date.getDate() + 1);
+            document.getElementById('ui-date').innerText = gameState.date.toLocaleDateString('ru-RU');
+            const year = gameState.date.getFullYear();
+
+            // Проверка смены лидера
+            if (gameState.date.getDate() === 1 && HISTORY[gameState.player.id]) {
+                const currentLeader = getLeader(gameState.player.id, year);
+                if (document.getElementById('ui-leader-name').innerText !== currentLeader.n) {
+                    document.getElementById('ui-leader-name').innerText = currentLeader.n;
+                    addEvent(`Смена власти! Новый лидер: ${currentLeader.n}`);
+                }
+            }
+
+            // Война
+            for (let tid in gameState.activeWars) {
+                gameState.activeWars[tid] += Math.random() * 2; // Прогресс
+                const prog = gameState.activeWars[tid];
+                
+                document.getElementById('war-progress-bar').style.width = Math.min(100, prog) + "%";
+                document.getElementById('war-progress-text').innerText = Math.floor(prog) + "%";
+
+                if (prog >= 100) {
+                    delete gameState.activeWars[tid];
+                    document.getElementById('war-status-bar').classList.add('hidden');
+                    d3.select(`#${tid}`).attr("fill", gameState.player.color).classed("war-active", false); // Оккупация
+                    addEvent(`ПОБЕДА! ${COUNTRIES.find(c=>c.id===tid).name} капитулировала.`);
+                }
+            }
+        }
+
+        function getLeader(id, year) {
+            if (year >= 2026) return generateAILeader(id, year);
+            const hist = HISTORY[id];
+            if (!hist) return { n: "Национальный Лидер", i: `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}` };
+            
+            let l = hist[0];
+            for (let h of hist) if (year >= h.y) l = h;
+            return l;
+        }
+
+        function generateAILeader(id, year) {
+            const seed = id + year;
+            return {
+                n: "Президент (AI Gen)",
+                i: `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`
+            };
+        }
+
+        // --- ДИПЛОМАТИЯ ---
         function openDiplomacy(target) {
             if (target.id === gameState.player.id) return;
             
@@ -507,107 +601,72 @@
             const panel = document.getElementById('diplomacy-panel');
             panel.classList.remove('hidden');
             
-            document.getElementById('diplo-flag').src = `https://flagcdn.com/w80/${target.flag}.png`;
-            document.getElementById('diplo-name').innerText = target.name;
-            document.getElementById('diplo-leader').innerText = target.leader;
+            const leader = getLeader(target.id, gameState.date.getFullYear());
+            
+            document.getElementById('diplo-leader-img').src = leader.i;
+            document.getElementById('diplo-country').innerText = target.name;
+            document.getElementById('diplo-leader').innerText = leader.n;
             document.getElementById('diplo-ideology').innerText = target.ideology;
-            document.getElementById('diplo-opinion').innerText = "+10"; // Заглушка
             document.getElementById('diplo-army').innerText = `${target.army}K`;
-            document.getElementById('diplo-ind').innerText = `${Math.floor(target.gdp / 10)} фб.`;
-            document.getElementById('diplo-leader-img').src = target.img;
+            
+            // Если война идет
+            if (gameState.activeWars[target.id]) {
+                document.getElementById('war-status-bar').classList.remove('hidden');
+            } else {
+                document.getElementById('war-status-bar').classList.add('hidden');
+            }
         }
 
-        function closeDiplo() {
-            document.getElementById('diplomacy-panel').classList.add('hidden');
-        }
+        function closeDiplo() { document.getElementById('diplomacy-panel').classList.add('hidden'); }
 
-        // Действия
         function diploAction(action) {
-            if (!gameState.target) return;
-            const t = gameState.target;
-            const p = gameState.player;
-
             if (action === 'war_goal') {
                 showModal('war');
             } else if (action === 'alliance') {
-                if (t.ideology === p.ideology) {
-                    addEvent(`Альянс с ${t.name} заключен! (Схожая идеология)`);
+                if (gameState.player.ideology === gameState.target.ideology) {
+                    addEvent(`Альянс с ${gameState.target.name} заключен!`);
                 } else {
-                    addEvent(`${t.name} отклонила альянс (Разные взгляды)`);
+                    addEvent(`${gameState.target.name} отклонила альянс.`);
                 }
             } else if (action === 'lend_lease') {
                 showModal('lend');
-            } else if (action === 'improve') {
-                addEvent(`Начато улучшение отношений с ${t.name}. (-10 PP)`);
-            } else if (action === 'trade') {
-                addEvent(`Торговое соглашение с ${t.name} подписано.`);
             }
         }
 
-        // Модальные окна
         function showModal(type) {
-            const modal = document.getElementById('modal-overlay');
-            const war = document.getElementById('modal-war');
-            const lend = document.getElementById('modal-lend');
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.getElementById('war-modal').classList.add('hidden');
+            document.getElementById('lend-lease-modal').classList.add('hidden');
             
-            modal.classList.remove('hidden');
-            war.classList.add('hidden');
-            lend.classList.add('hidden');
-            
-            if (type === 'war') {
-                war.classList.remove('hidden');
-                document.getElementById('war-target-name').innerText = gameState.target.name;
-                document.getElementById('war-analysis').classList.add('hidden');
-                document.getElementById('btn-send-war').innerText = "ОТПРАВИТЬ УЛЬТИМАТУМ";
-                document.getElementById('btn-send-war').disabled = false;
-            } else if (type === 'lend') {
-                lend.classList.remove('hidden');
-            }
+            if (type === 'war') document.getElementById('war-modal').classList.remove('hidden');
+            else document.getElementById('lend-lease-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.add('hidden');
-        }
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        // --- НЕЙРОСЕТЬ (Эмуляция) ---
-        async function analyzeWarGoal() {
+        async function confirmWar() {
             const reason = document.getElementById('war-reason').value;
-            if (reason.length < 5) return;
-
-            const btn = document.getElementById('btn-send-war');
-            const analysis = document.getElementById('war-analysis');
-            const output = document.getElementById('ai-text');
-
+            const btn = document.getElementById('btn-confirm-war');
+            const analysis = document.getElementById('ai-analysis');
+            
             btn.disabled = true;
             btn.innerText = "АНАЛИЗ ГЕНШТАБА...";
             analysis.classList.remove('hidden');
-            output.innerText = "Обработка данных...";
-
-            // Эмуляция ответа ИИ (В реале тут fetch к API)
-            // Промпт для ИИ был бы: "Игрок хочет напасть на [Страна] по причине [Причина]. Оцени легитимность и последствия."
             
             setTimeout(() => {
-                const legitimacy = Math.random() > 0.5;
-                const tension = Math.floor(Math.random() * 10) + 5;
+                let verdict = "Причина слабая. Осуждение ООН неизбежно.";
+                if (reason.length > 10) verdict = "Казус белли признан легитимным. Народ поддерживает мобилизацию.";
                 
-                let response = "";
-                if (reason.toLowerCase().includes("земл") || reason.toLowerCase().includes("вернуть")) {
-                    response = "Реваншизм. Народ поддерживает, но ООН осудит. Стабильность +5%, Мировое напряжение +" + tension + "%.";
-                } else if (reason.toLowerCase().includes("террор") || reason.toLowerCase().includes("защит")) {
-                    response = "Операция по поддержанию мира. Легитимно. Союзники могут поддержать.";
-                } else {
-                    response = "Агрессия без веской причины. Высокий риск санкций и эмбарго. Стабильность -10%.";
-                }
-
-                output.innerText = response;
-                btn.innerText = "ОБЪЯВИТЬ ВОЙНУ";
-                btn.disabled = false;
-                btn.onclick = () => {
-                    addEvent(`ВОЙНА! Мы атаковали ${gameState.target.name}. Повод: "${reason}".`);
-                    d3.select(`#${gameState.target.id}`).style("fill", "#8b0000"); // Красим врага
+                document.getElementById('ai-text').innerText = verdict;
+                
+                setTimeout(() => {
+                    gameState.activeWars[gameState.target.id] = 0;
+                    d3.select(`#${gameState.target.id}`).classed("war-active", true); // Визуал войны
+                    addEvent(`ВОЙНА НАЧАТА ПРОТИВ ${gameState.target.name}!`);
                     closeModal();
-                };
-            }, 1500);
+                    openDiplomacy(gameState.target); // Обновить панель
+                }, 1500);
+            }, 1000);
         }
 
         function sendLendLease() {
@@ -615,29 +674,12 @@
             closeModal();
         }
 
-        function addEvent(text) {
+        function addEvent(msg) {
             const log = document.getElementById('event-log');
             const div = document.createElement('div');
             div.className = "text-gray-400 mb-1 border-l-2 border-yellow-600 pl-2";
-            div.innerHTML = `<span class="text-yellow-600">[${new Date().toLocaleTimeString()}]</span> ${text}`;
+            div.innerHTML = `<span class="text-yellow-600">[${gameState.date.toLocaleDateString()}]</span> ${msg}`;
             log.prepend(div);
-        }
-
-        function endTurn() {
-            // Эмуляция хода
-            gameState.date.setMonth(gameState.date.getMonth() + 1);
-            document.getElementById('ui-date').innerText = gameState.date.toLocaleString('ru', { month: 'short', year: 'numeric' });
-            
-            // Рандомное событие
-            if (Math.random() > 0.7) {
-                const evs = [
-                    "Рост цен на нефть укрепил бюджет.",
-                    "Протесты оппозиции подавлены.",
-                    "Технологический прорыв в электронике.",
-                    "Пограничный конфликт в Азии."
-                ];
-                addEvent(evs[Math.floor(Math.random() * evs.length)]);
-            }
         }
 
     </script>
