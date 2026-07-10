@@ -6,7 +6,6 @@
     <title>Ruina App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Базовые настройки и темная тема */
         :root {
             --bg-color: #0a0a0c;
             --card-bg: rgba(255, 255, 255, 0.05);
@@ -21,17 +20,16 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            user-select: none; /* Запрещаем выделение текста, как в настоящих приложениях */
+            user-select: none;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             overflow-x: hidden;
-            padding-bottom: 80px; /* Место под нижнюю панель */
+            padding-bottom: 80px;
         }
 
-        /* Шапка с профилем */
         .header {
             display: flex;
             justify-content: space-between;
@@ -80,7 +78,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Баннер */
         .banner {
             margin: 16px;
             padding: 20px;
@@ -101,7 +98,6 @@
             color: var(--text-muted);
         }
 
-        /* Сетка игр */
         .games-section {
             padding: 0 16px;
         }
@@ -147,7 +143,6 @@
             font-size: 32px;
         }
 
-        /* Специфичные цвета для карточек */
         .card-crash {
             background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
             border-left: 4px solid #10b981;
@@ -158,7 +153,6 @@
             border-left: 4px solid #f59e0b;
         }
 
-        /* Нижняя навигация */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -170,7 +164,7 @@
             display: flex;
             justify-content: space-around;
             padding: 12px 0;
-            padding-bottom: env(safe-area-inset-bottom, 12px); /* Для iPhone */
+            padding-bottom: env(safe-area-inset-bottom, 12px);
         }
 
         .nav-item {
@@ -198,23 +192,22 @@
             </div>
         </div>
         <div class="balance">
-            <span>💎</span> <span id="balance-amount">0.00</span>
+            <span>💎</span> <span id="balance-amount">...</span>
         </div>
     </header>
 
     <div class="banner">
         <h1>Система Ruina</h1>
-        <p>Бонус +10% к первому депозиту</p>
+        <p>Бонус +10% к депозиту</p>
     </div>
 
     <div class="games-section">
         <h3 class="section-title">Игровые режимы</h3>
         <div class="grid">
-            
             <div class="game-card card-crash" onclick="openGame('Краш')">
                 <div class="game-info">
                     <h3>Краш</h3>
-                    <p>◉ 24 играют прямо сейчас</p>
+                    <p>Сорви куш до падения</p>
                 </div>
                 <div class="game-icon">📈</div>
             </div>
@@ -226,15 +219,6 @@
                 </div>
                 <div class="game-icon">📦</div>
             </div>
-
-            <div class="game-card" onclick="openGame('Мини-игры')">
-                <div class="game-info">
-                    <h3>Мини-игры</h3>
-                    <p>Рулетка, кости, слоты</p>
-                </div>
-                <div class="game-icon">🎲</div>
-            </div>
-
         </div>
     </div>
 
@@ -243,53 +227,55 @@
             <span style="font-size: 20px;">🎮</span>
             <span>Игры</span>
         </div>
-        <div class="nav-item" onclick="alert('Откроется инвентарь')">
+        <div class="nav-item">
             <span style="font-size: 20px;">🎒</span>
             <span>Инвентарь</span>
-        </div>
-        <div class="nav-item" onclick="alert('Откроется топ игроков')">
-            <span style="font-size: 20px;">🏆</span>
-            <span>Лидеры</span>
         </div>
     </nav>
 
     <script>
-        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
-        
-        // Разворачиваем приложение на весь экран телефона
         tg.expand();
-        
-        // Говорим Телеграму, что приложение готово к отображению
         tg.ready();
 
-        // Подгружаем данные пользователя из Телеграма (если открыто в боте)
         const user = tg.initDataUnsafe?.user;
         
         if (user) {
-            // Вставляем имя пользователя
             document.getElementById('username').innerText = user.first_name;
-            // Делаем первую букву имени аватаркой
             document.getElementById('user-avatar').innerText = user.first_name.charAt(0).toUpperCase();
         } else {
-            // Если открыто просто в браузере (для тестов на ПК)
             document.getElementById('username').innerText = 'Гость';
             document.getElementById('user-avatar').innerText = 'Г';
         }
 
-        // Имитация загрузки баланса с сервера
-        setTimeout(() => {
-            document.getElementById('balance-amount').innerText = '1 500.00';
-        }, 500);
+        // ==========================================
+        // НАСТРОЙКА СВЯЗИ С TERMUX
+        // ==========================================
+        
+        // ВСТАВЬ СВОЮ HTTPS ССЫЛКУ ИЗ PINGGY НИЖЕ ВМЕСТО ПРИМЕРА
+        const backendUrl = "https://shkjm-91-225-4-163.run.pinggy-free.link"; 
+        
+        const userId = user ? user.id : 7128871752;
 
-        // Функция обработки кликов по играм
+        // Запрашиваем баланс с сервера
+        fetch(`${backendUrl}/api/balance/${userId}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Сервер не ответил");
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('balance-amount').innerText = data.balance.toFixed(2);
+            })
+            .catch(error => {
+                console.error("Ошибка связи:", error);
+                document.getElementById('balance-amount').innerText = "Ошибка";
+            });
+
         function openGame(gameName) {
-            // Обратная связь Taptic Engine (вибрация при нажатии)
             tg.HapticFeedback.impactOccurred('light');
-            
-            // Временно выводим уведомление от самого Телеграма
-            tg.showAlert('Запуск модуля: ' + gameName + '...\n(Здесь откроется страница игры)');
+            tg.showAlert('Запуск: ' + gameName);
         }
     </script>
 </body>
 </html>
+
