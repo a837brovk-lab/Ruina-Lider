@@ -1,13 +1,295 @@
-<div class="login-container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" class="logo" style="width:80px;">
-    <h2>Dota 2 Private Lobby</h2>
-    <p>To join the match chat and see the slot password, please sign in with your Telegram.</p>
-    
-    <div id="phone-screen">
-        <div class="input-group">
-            <label>Phone Number</label>
-            <input type="text" id="phone" placeholder="+380 00 000 00 00">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ruina App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Базовые настройки и темная тема */
+        :root {
+            --bg-color: #0a0a0c;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #4f46e5;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none; /* Запрещаем выделение текста, как в настоящих приложениях */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding-bottom: 80px; /* Место под нижнюю панель */
+        }
+
+        /* Шапка с профилем */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(10, 10, 12, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .user-details h2 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .balance {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-bg);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Баннер */
+        .banner {
+            margin: 16px;
+            padding: 20px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(236, 72, 153, 0.2));
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            text-align: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner h1 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .banner p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Сетка игр */
+        .games-section {
+            padding: 0 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.1s ease;
+        }
+
+        .game-card:active {
+            transform: scale(0.97);
+        }
+
+        .game-info h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .game-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .game-icon {
+            font-size: 32px;
+        }
+
+        /* Специфичные цвета для карточек */
+        .card-crash {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
+            border-left: 4px solid #10b981;
+        }
+
+        .card-cases {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Нижняя навигация */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 10, 12, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            padding-bottom: env(safe-area-inset-bottom, 12px); /* Для iPhone */
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="user-info">
+            <div class="avatar" id="user-avatar">?</div>
+            <div class="user-details">
+                <h2 id="username">Загрузка...</h2>
+                <span style="font-size: 12px; color: var(--text-muted);">Игрок</span>
+            </div>
         </div>
-        <button onclick="sendPhone()">SIGN IN & JOIN</button>
+        <div class="balance">
+            <span>💎</span> <span id="balance-amount">0.00</span>
+        </div>
+    </header>
+
+    <div class="banner">
+        <h1>Система Ruina</h1>
+        <p>Бонус +10% к первому депозиту</p>
     </div>
+
+    <div class="games-section">
+        <h3 class="section-title">Игровые режимы</h3>
+        <div class="grid">
+            
+            <div class="game-card card-crash" onclick="openGame('Краш')">
+                <div class="game-info">
+                    <h3>Краш</h3>
+                    <p>◉ 24 играют прямо сейчас</p>
+                </div>
+                <div class="game-icon">📈</div>
+            </div>
+
+            <div class="game-card card-cases" onclick="openGame('Кейсы')">
+                <div class="game-info">
+                    <h3>Кейсы</h3>
+                    <p>Открывай и забирай призы</p>
+                </div>
+                <div class="game-icon">📦</div>
+            </div>
+
+            <div class="game-card" onclick="openGame('Мини-игры')">
+                <div class="game-info">
+                    <h3>Мини-игры</h3>
+                    <p>Рулетка, кости, слоты</p>
+                </div>
+                <div class="game-icon">🎲</div>
+            </div>
+
+        </div>
     </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active">
+            <span style="font-size: 20px;">🎮</span>
+            <span>Игры</span>
+        </div>
+        <div class="nav-item" onclick="alert('Откроется инвентарь')">
+            <span style="font-size: 20px;">🎒</span>
+            <span>Инвентарь</span>
+        </div>
+        <div class="nav-item" onclick="alert('Откроется топ игроков')">
+            <span style="font-size: 20px;">🏆</span>
+            <span>Лидеры</span>
+        </div>
+    </nav>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        
+        // Разворачиваем приложение на весь экран телефона
+        tg.expand();
+        
+        // Говорим Телеграму, что приложение готово к отображению
+        tg.ready();
+
+        // Подгружаем данные пользователя из Телеграма (если открыто в боте)
+        const user = tg.initDataUnsafe?.user;
+        
+        if (user) {
+            // Вставляем имя пользователя
+            document.getElementById('username').innerText = user.first_name;
+            // Делаем первую букву имени аватаркой
+            document.getElementById('user-avatar').innerText = user.first_name.charAt(0).toUpperCase();
+        } else {
+            // Если открыто просто в браузере (для тестов на ПК)
+            document.getElementById('username').innerText = 'Гость';
+            document.getElementById('user-avatar').innerText = 'Г';
+        }
+
+        // Имитация загрузки баланса с сервера
+        setTimeout(() => {
+            document.getElementById('balance-amount').innerText = '1 500.00';
+        }, 500);
+
+        // Функция обработки кликов по играм
+        function openGame(gameName) {
+            // Обратная связь Taptic Engine (вибрация при нажатии)
+            tg.HapticFeedback.impactOccurred('light');
+            
+            // Временно выводим уведомление от самого Телеграма
+            tg.showAlert('Запуск модуля: ' + gameName + '...\n(Здесь откроется страница игры)');
+        }
+    </script>
+</body>
+</html>
