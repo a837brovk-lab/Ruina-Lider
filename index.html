@@ -9,33 +9,32 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    .glass { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.8); }
-    .glass-dark { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.9); }
-    .glass-input { background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-    .glass-bubble { background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 20px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,1); }
+    .glass { background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.8); }
+    .glass-dark { background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.9); }
+    .glass-input { background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .glass-bubble { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 20px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,1); }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.2); }
   </style>
 </head>
 <body class="h-full bg-[#eef5fa] text-slate-800 overflow-hidden relative">
 
-  <!-- Фоновые мягкие градиентные сферы -->
+  <!-- Фон -->
   <div class="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-[#8ba1f9] to-[#d6c4f9] rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
   <div class="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tr from-[#9ee8d7] to-[#e4f9c4] rounded-full blur-[120px] opacity-50 pointer-events-none"></div>
   <div class="absolute top-[30%] left-[20%] w-[40vw] h-[40vw] bg-[#a8d4ff] rounded-full blur-[90px] opacity-40 pointer-events-none"></div>
 
-  <!-- КОНТЕЙНЕР АВТОРИЗАЦИИ -->
-  <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-md p-8 glass rounded-[2.5rem] shadow-[0_8px_40px_rgba(0,0,0,0.06)] animate-in fade-in zoom-in-95 duration-500">
+  <!-- ЭКРАН АВТОРИЗАЦИИ -->
+  <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md p-8 glass rounded-[2.5rem] shadow-[0_8px_40px_rgba(0,0,0,0.06)]">
       <div class="w-16 h-16 rounded-3xl glass-dark flex items-center justify-center mb-6 mx-auto shadow-sm">
         <i class="fa-solid fa-sparkles text-blue-500 text-xl"></i>
       </div>
       <h1 class="text-3xl font-semibold text-slate-800 text-center mb-2 tracking-tight">Nexus AI</h1>
       <p class="text-slate-500 text-center mb-8 text-sm">Войдите для синхронизации устройств</p>
       
-      <form id="authForm" class="space-y-4">
+      <form id="authForm" class="space-y-4" onsubmit="handleLogin(event)">
         <div class="relative">
           <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
           <input type="text" id="usernameInput" required placeholder="Имя пользователя" class="w-full glass-input rounded-2xl py-3.5 pl-12 pr-4 text-slate-700 placeholder-slate-400 outline-none focus:border-blue-400 transition-all">
@@ -57,7 +56,7 @@
     </div>
   </div>
 
-  <!-- ОСНОВНОЙ ИНТЕРФЕЙС ПЛАТФОРМЫ -->
+  <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
   <div id="appContainer" class="flex h-full w-full relative z-10 hidden">
     
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-20 md:hidden hidden" onclick="toggleSidebar()"></div>
@@ -124,8 +123,8 @@
       <div id="chatScrollArea" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div id="chatContent" class="max-w-3xl mx-auto flex flex-col gap-6 pb-40">
           
-          <div id="welcomeScreen" class="flex flex-col items-center justify-center min-h-[60vh] mt-4 animate-in fade-in duration-500">
-            <div onclick="selectBotForNewChat(bots[0].id)" class="w-24 h-24 rounded-[2rem] glass flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative group cursor-pointer hover:scale-105 transition-transform">
+          <div id="welcomeScreen" class="flex flex-col items-center justify-center min-h-[60vh] mt-4">
+            <div onclick="selectBotForNewChat('bot_1')" class="w-24 h-24 rounded-[2rem] glass flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative group cursor-pointer hover:scale-105 transition-transform">
               <i class="fa-solid fa-sparkles text-3xl text-blue-500"></i>
               <div class="absolute -bottom-3 bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md whitespace-nowrap">СТАРТ</div>
             </div>
@@ -139,8 +138,8 @@
       <div id="inputAreaWrapper" class="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-[#eef5fa] via-[#eef5fa]/95 to-transparent pt-20 pointer-events-none hidden">
         <div class="max-w-3xl mx-auto relative group pointer-events-auto">
           
-          <!-- МЕНЮ ПЛЮСА (МЕДИА ФАЙЛЫ) -->
-          <div id="mediaMenu" class="absolute bottom-full left-0 mb-3 w-56 glass rounded-3xl p-2 shadow-xl border border-white/90 hidden animate-in fade-in zoom-in-95 duration-200">
+          <!-- МЕНЮ ФАЙЛОВ -->
+          <div id="mediaMenu" class="absolute bottom-full left-0 mb-3 w-56 glass rounded-3xl p-2 shadow-xl border border-white/90 hidden">
             <label class="flex items-center gap-3 px-4 py-2.5 rounded-2xl hover:bg-white/60 cursor-pointer text-sm font-medium text-slate-700 transition-colors">
               <i class="fa-regular fa-image text-blue-500 w-5"></i>
               <span>Фото</span>
@@ -185,7 +184,7 @@
 
   <!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ БОТА -->
   <div id="botModal" class="fixed inset-0 bg-slate-900/20 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-lg p-8 glass rounded-[2.5rem] shadow-[0_16px_60px_rgba(0,0,0,0.1)] animate-in zoom-in-95 duration-300">
+    <div class="w-full max-w-lg p-8 glass rounded-[2.5rem] shadow-[0_16px_60px_rgba(0,0,0,0.1)]">
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-3">
           <div class="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-500">
@@ -224,7 +223,7 @@
     ];
     let chats = [];
     let activeChatId = null;
-    let currentSelectedBotId = null; // Выбранный бот для будущего нового чата (появится после отправки сообщения)
+    let currentSelectedBotId = null;
     let currentAttachment = null;
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -237,13 +236,12 @@
 
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
+        document.getElementById('authScreen').classList.add('hidden');
         initApp();
-      } else {
-        document.getElementById('authScreen').classList.remove('hidden');
       }
     });
 
-    document.getElementById('authForm').addEventListener('submit', (e) => {
+    function handleLogin(e) {
       e.preventDefault();
       const username = document.getElementById('usernameInput').value.trim();
       const remember = document.getElementById('rememberMeCheck').checked;
@@ -256,7 +254,7 @@
       }
       document.getElementById('authScreen').classList.add('hidden');
       initApp();
-    });
+    }
 
     function logout() {
       localStorage.removeItem('nexus_user');
@@ -304,7 +302,6 @@
       `).join('');
     }
 
-    // Клик по боту — подготовка к новому чату (сам чат создастся только при первом сообщении)
     function selectBotForNewChat(botId) {
       currentSelectedBotId = botId;
       activeChatId = null;
@@ -320,7 +317,7 @@
       document.getElementById('inputAreaWrapper').classList.remove('hidden');
       
       document.getElementById('chatContent').innerHTML = `
-        <div class="text-center py-12 text-slate-400 text-sm animate-in fade-in">
+        <div class="text-center py-12 text-slate-400 text-sm">
           Напишите первое сообщение, чтобы открыть чат с ботом <strong class="text-slate-600">${bot.name}</strong>...
         </div>
       `;
@@ -357,7 +354,7 @@
       container.innerHTML = chat.messages.map(m => {
         const isUser = m.role === 'user';
         return `
-          <div class="flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300">
+          <div class="flex gap-4 ${isUser ? 'justify-end' : 'justify-start'}">
             ${!isUser ? `<div class="w-8 h-8 rounded-full glass flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-robot text-blue-500 text-xs"></i></div>` : ''}
             <div class="max-w-[80%] px-5 py-3.5 text-[15px] leading-relaxed rounded-3xl ${isUser ? 'bg-blue-500 text-white rounded-br-lg shadow-md' : 'glass-bubble text-slate-800 rounded-bl-lg'}">
               ${m.attachment ? renderAttachmentContent(m.attachment) : ''}
@@ -404,14 +401,12 @@
       document.getElementById('inputAreaWrapper').classList.add('hidden');
     }
 
-    // --- ОТПРАВКА СООБЩЕНИЙ И СОЗДАНИЕ ЧАТА ---
     async function handleSendMessage(e) {
       e?.preventDefault();
       const input = document.getElementById('userInput');
       const text = input.value.trim();
       if ((!text && !currentAttachment)) return;
 
-      // Если это новый чат (еще не сохранен в массив), создаем его прямо сейчас по первому сообщению
       let chat;
       if (!activeChatId) {
         if (!currentSelectedBotId) currentSelectedBotId = bots[0].id;
@@ -434,7 +429,6 @@
       chat.messages.push(userMsg);
 
       input.value = '';
-      input.style.height = 'auto';
       clearAttachment();
       saveData();
       renderChats();
@@ -455,11 +449,11 @@
       const prompt = `${history}\n${bot.name}:`;
 
       const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         systemInstruction: { parts: [{ text: bot.prompt }] }
       };
 
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 3; i++) {
         try {
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -467,12 +461,12 @@
             body: JSON.stringify(payload)
           });
           const data = await res.json();
-          return data.candidates?.[0]?.content?.parts?.[0]?.text || "Пустой ответ от нейросети.";
-        } catch (err) {
-          if (i === 3) return "Ошибка соединения с сервером.";
-          await new Promise(r => setTimeout(r, 2000));
-        }
+          const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textResponse) return textResponse;
+        } catch (err) {}
+        await new Promise(r => setTimeout(r, 1000));
       }
+      return "Извините, не удалось получить ответ от сервера. Попробуйте еще раз.";
     }
 
     function showTypingIndicator(chat) {
@@ -480,7 +474,7 @@
       const bot = bots.find(b => b.id === chat.botId) || bots[0];
       const div = document.createElement('div');
       div.id = 'typingIndicator';
-      div.className = 'flex gap-4 justify-start animate-in fade-in';
+      div.className = 'flex gap-4 justify-start';
       div.innerHTML = `
         <div class="w-8 h-8 rounded-full glass flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid ${bot.icon} ${bot.color} text-xs"></i></div>
         <div class="glass-bubble px-5 py-4 rounded-3xl rounded-bl-lg flex items-center gap-1.5">
@@ -498,7 +492,6 @@
       if (el) el.remove();
     }
 
-    // --- МЕДИА ФАЙЛЫ ---
     function toggleMediaMenu(e) {
       e.stopPropagation();
       const menu = document.getElementById('mediaMenu');
@@ -533,7 +526,6 @@
       document.getElementById('zipInput').value = '';
     }
 
-    // --- БОТЫ МОДАЛКА ---
     function openBotModal() { document.getElementById('botModal').classList.remove('hidden'); }
     function closeBotModal() { document.getElementById('botModal').classList.add('hidden'); }
 
