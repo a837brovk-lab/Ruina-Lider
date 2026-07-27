@@ -1,281 +1,586 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="h-full">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ruina App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-color: #0a0a0c;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --primary: #4f46e5;
-            --text-main: #ffffff;
-            --text-muted: #a1a1aa;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            user-select: none;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            overflow-x: hidden;
-            padding-bottom: 80px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            background: rgba(10, 10, 12, 0.8);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #ec4899);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .user-details h2 {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .balance {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--card-bg);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border: 1px solid var(--border-color);
-        }
-
-        .banner {
-            margin: 16px;
-            padding: 20px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(236, 72, 153, 0.2));
-            border: 1px solid rgba(236, 72, 153, 0.3);
-            text-align: center;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .banner h1 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .banner p {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .games-section {
-            padding: 0 16px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: var(--text-muted);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
-
-        .game-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.1s ease;
-        }
-
-        .game-card:active {
-            transform: scale(0.97);
-        }
-
-        .game-info h3 {
-            font-size: 18px;
-            margin-bottom: 4px;
-        }
-
-        .game-info p {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .game-icon {
-            font-size: 32px;
-        }
-
-        .card-crash {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
-            border-left: 4px solid #10b981;
-        }
-
-        .card-cases {
-            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
-            border-left: 4px solid #f59e0b;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 10, 12, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            padding-bottom: env(safe-area-inset-bottom, 12px);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus AI Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.8); }
+    .glass-dark { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.9); }
+    .glass-input { background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .glass-bubble { background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 20px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,1); }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.2); }
+  </style>
 </head>
-<body>
+<body class="h-full bg-[#eef5fa] text-slate-800 overflow-hidden relative">
 
-    <header class="header">
-        <div class="user-info">
-            <div class="avatar" id="user-avatar">?</div>
-            <div class="user-details">
-                <h2 id="username">Загрузка...</h2>
-                <span style="font-size: 12px; color: var(--text-muted);">Игрок</span>
-            </div>
-        </div>
-        <div class="balance">
-            <span>💎</span> <span id="balance-amount">...</span>
-        </div>
-    </header>
+  <!-- Фоновые мягкие градиентные сферы -->
+  <div class="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-[#8ba1f9] to-[#d6c4f9] rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tr from-[#9ee8d7] to-[#e4f9c4] rounded-full blur-[120px] opacity-50 pointer-events-none"></div>
+  <div class="absolute top-[30%] left-[20%] w-[40vw] h-[40vw] bg-[#a8d4ff] rounded-full blur-[90px] opacity-40 pointer-events-none"></div>
 
-    <div class="banner">
-        <h1>Система Ruina</h1>
-        <p>Бонус +10% к депозиту</p>
+  <!-- КОНТЕЙНЕР АВТОРИЗАЦИИ -->
+  <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md p-8 glass rounded-[2.5rem] shadow-[0_8px_40px_rgba(0,0,0,0.06)] animate-in fade-in zoom-in-95 duration-500">
+      <div class="w-16 h-16 rounded-3xl glass-dark flex items-center justify-center mb-6 mx-auto shadow-sm">
+        <i class="fa-solid fa-sparkles text-blue-500 text-xl"></i>
+      </div>
+      <h1 class="text-3xl font-semibold text-slate-800 text-center mb-2 tracking-tight">Nexus AI</h1>
+      <p class="text-slate-500 text-center mb-8 text-sm">Войдите для синхронизации устройств</p>
+      
+      <form id="authForm" class="space-y-4">
+        <div class="relative">
+          <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="usernameInput" required placeholder="Имя пользователя" class="w-full glass-input rounded-2xl py-3.5 pl-12 pr-4 text-slate-700 placeholder-slate-400 outline-none focus:border-blue-400 transition-all">
+        </div>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="password" id="passwordInput" required placeholder="Пароль" class="w-full glass-input rounded-2xl py-3.5 pl-12 pr-4 text-slate-700 placeholder-slate-400 outline-none focus:border-blue-400 transition-all">
+        </div>
+        
+        <label class="flex items-center gap-2.5 px-1 cursor-pointer select-none">
+          <input type="checkbox" id="rememberMeCheck" class="w-4 h-4 rounded text-blue-500 focus:ring-blue-400 border-slate-300">
+          <span class="text-xs text-slate-600 font-medium">Запомнить устройство</span>
+        </label>
+
+        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-2xl py-3.5 mt-2 transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)]">
+          Войти в систему
+        </button>
+      </form>
     </div>
+  </div>
 
-    <div class="games-section">
-        <h3 class="section-title">Игровые режимы</h3>
-        <div class="grid">
-            <div class="game-card card-crash" onclick="openGame('Краш')">
-                <div class="game-info">
-                    <h3>Краш</h3>
-                    <p>Сорви куш до падения</p>
-                </div>
-                <div class="game-icon">📈</div>
-            </div>
+  <!-- ОСНОВНОЙ ИНТЕРФЕЙС ПЛАТФОРМЫ -->
+  <div id="appContainer" class="flex h-full w-full relative z-10 hidden">
+    
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-20 md:hidden hidden" onclick="toggleSidebar()"></div>
 
-            <div class="game-card card-cases" onclick="openGame('Кейсы')">
-                <div class="game-info">
-                    <h3>Кейсы</h3>
-                    <p>Открывай и забирай призы</p>
-                </div>
-                <div class="game-icon">📦</div>
-            </div>
+    <!-- БОКОВАЯ ПАНЕЛЬ -->
+    <aside id="sidebar" class="w-72 flex-shrink-0 border-r border-white/60 glass flex flex-col z-30 absolute md:relative h-full -translate-x-full md:translate-x-0 transition-transform duration-300 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <div class="h-16 flex items-center justify-between px-6 border-b border-white/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl glass-dark flex items-center justify-center shadow-sm">
+            <i class="fa-solid fa-user text-blue-500 text-sm"></i>
+          </div>
+          <span id="displayUsername" class="font-semibold text-slate-700 truncate max-w-[130px]">Пользователь</span>
         </div>
+        <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700 p-2">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-3 px-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Мои ИИ Боты</span>
+            <button onclick="openBotModal()" class="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Создать бота">
+              <i class="fa-solid fa-plus text-xs"></i>
+            </button>
+          </div>
+          <div id="botsList" class="space-y-1.5"></div>
+        </div>
+
+        <div class="h-[1px] w-full bg-white/50"></div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3 px-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">История чатов</span>
+            <button onclick="clearAllChats()" class="text-[10px] text-red-400 hover:text-red-500 transition-colors">Очистить</button>
+          </div>
+          <div id="chatsList" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-white/60 bg-white/10 mt-auto">
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-500 hover:bg-white/40 transition-colors">
+          <i class="fa-solid fa-right-from-bracket rotate-180"></i>
+          <span class="font-medium">Выйти с устройства</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- РАБОЧЯЯ ОБЛАСТЬ -->
+    <main class="flex-1 flex flex-col relative h-full w-full">
+      
+      <header class="h-16 flex items-center justify-between px-6 border-b border-white/60 bg-white/20 backdrop-blur-xl shrink-0">
+        <div class="flex items-center gap-4">
+          <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-800 glass p-2.5 rounded-xl">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div id="currentBotBadge" class="hidden items-center gap-2 px-3.5 py-1.5 rounded-xl glass shadow-sm">
+            <i id="currentBotIcon" class="fa-solid fa-robot text-blue-500"></i>
+            <span id="currentBotName" class="text-sm font-medium text-slate-700">Nexus Base</span>
+          </div>
+        </div>
+      </header>
+
+      <div id="chatScrollArea" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div id="chatContent" class="max-w-3xl mx-auto flex flex-col gap-6 pb-40">
+          
+          <div id="welcomeScreen" class="flex flex-col items-center justify-center min-h-[60vh] mt-4 animate-in fade-in duration-500">
+            <div onclick="selectBotForNewChat(bots[0].id)" class="w-24 h-24 rounded-[2rem] glass flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative group cursor-pointer hover:scale-105 transition-transform">
+              <i class="fa-solid fa-sparkles text-3xl text-blue-500"></i>
+              <div class="absolute -bottom-3 bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md whitespace-nowrap">СТАРТ</div>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-semibold text-slate-800 mb-3 tracking-tight text-center">Платформа Nexus AI</h1>
+            <p class="text-slate-500 mb-10 text-center max-w-md text-sm leading-relaxed">Выберите ИИ-помощника в меню или создайте своего бота с уникальным системным промптом.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="inputAreaWrapper" class="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-[#eef5fa] via-[#eef5fa]/95 to-transparent pt-20 pointer-events-none hidden">
+        <div class="max-w-3xl mx-auto relative group pointer-events-auto">
+          
+          <!-- МЕНЮ ПЛЮСА (МЕДИА ФАЙЛЫ) -->
+          <div id="mediaMenu" class="absolute bottom-full left-0 mb-3 w-56 glass rounded-3xl p-2 shadow-xl border border-white/90 hidden animate-in fade-in zoom-in-95 duration-200">
+            <label class="flex items-center gap-3 px-4 py-2.5 rounded-2xl hover:bg-white/60 cursor-pointer text-sm font-medium text-slate-700 transition-colors">
+              <i class="fa-regular fa-image text-blue-500 w-5"></i>
+              <span>Фото</span>
+              <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleFileAttach(event, 'image')">
+            </label>
+            <label class="flex items-center gap-3 px-4 py-2.5 rounded-2xl hover:bg-white/60 cursor-pointer text-sm font-medium text-slate-700 transition-colors">
+              <i class="fa-solid fa-video text-purple-500 w-5"></i>
+              <span>Видео</span>
+              <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="handleFileAttach(event, 'video')">
+            </label>
+            <label class="flex items-center gap-3 px-4 py-2.5 rounded-2xl hover:bg-white/60 cursor-pointer text-sm font-medium text-slate-700 transition-colors">
+              <i class="fa-regular fa-file-zipper text-amber-500 w-5"></i>
+              <span>ZIP архив</span>
+              <input type="file" id="zipInput" accept=".zip,.rar,.7z" class="hidden" onchange="handleFileAttach(event, 'zip')">
+            </label>
+          </div>
+
+          <div id="filePreviewBox" class="hidden mb-2 p-2 px-3 glass rounded-2xl flex items-center justify-between text-xs text-slate-600">
+            <div class="flex items-center gap-2 truncate">
+              <i id="previewIcon" class="fa-solid fa-file text-blue-500"></i>
+              <span id="previewName" class="truncate font-medium">file.png</span>
+            </div>
+            <button onclick="clearAttachment()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <form id="chatForm" onsubmit="handleSendMessage(event)" class="relative flex items-end gap-2 glass rounded-[2rem] p-2 shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition-all">
+            <button type="button" onclick="toggleMediaMenu(event)" class="p-3.5 text-slate-400 hover:text-slate-600 hover:bg-white/50 rounded-full transition-colors ml-1">
+              <i class="fa-solid fa-plus text-base"></i>
+            </button>
+            
+            <textarea id="userInput" rows="1" placeholder="Сообщение..." onkeydown="handleKeydown(event)" class="w-full max-h-48 min-h-[52px] bg-transparent border-none focus:ring-0 resize-none text-slate-800 placeholder-slate-400 text-[15px] py-3.5 px-1 outline-none font-normal"></textarea>
+            
+            <button type="submit" id="sendButton" class="p-3.5 rounded-full flex items-center justify-center transition-all mr-1 bg-blue-500 text-white shadow-md hover:bg-blue-600">
+              <i class="fa-solid fa-paper-plane text-sm"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ БОТА -->
+  <div id="botModal" class="fixed inset-0 bg-slate-900/20 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-lg p-8 glass rounded-[2.5rem] shadow-[0_16px_60px_rgba(0,0,0,0.1)] animate-in zoom-in-95 duration-300">
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-500">
+            <i class="fa-solid fa-robot text-lg"></i>
+          </div>
+          <h2 class="text-xl font-semibold text-slate-800">Создание ИИ-Бота</h2>
+        </div>
+        <button onclick="closeBotModal()" class="text-slate-400 hover:text-slate-700 glass p-2 rounded-full">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="saveNewBot(event)" class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1.5 ml-1">Имя бота</label>
+          <input type="text" id="newBotName" required placeholder="Напр: Креативный копирайтер" class="w-full glass-input rounded-2xl py-3 px-4 text-slate-700 placeholder-slate-400 outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1.5 ml-1">Системный промпт (Инструкция)</label>
+          <textarea id="newBotPrompt" required rows="4" placeholder="Опишите правила поведения и роль бота..." class="w-full glass-input rounded-2xl py-3 px-4 text-slate-700 placeholder-slate-400 outline-none focus:border-emerald-400 resize-none"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-2xl py-3.5 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.3)]">
+          Сохранить и запустить
+        </button>
+      </form>
     </div>
+  </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item active">
-            <span style="font-size: 20px;">🎮</span>
-            <span>Игры</span>
+  <script>
+    const apiKey = "";
+    
+    let currentUser = null;
+    let bots = [
+      { id: 'bot_1', name: 'Nexus Base', icon: 'fa-sparkles', color: 'text-blue-500', prompt: 'Ты — Nexus, дружелюбный и умный искусственный интеллект. Отвечай понятно и полезно.' },
+      { id: 'bot_2', name: 'Code Master', icon: 'fa-code', color: 'text-indigo-500', prompt: 'Ты — Senior разработчик. Помогай с кодом и архитектурой строго и профессионально.' }
+    ];
+    let chats = [];
+    let activeChatId = null;
+    let currentSelectedBotId = null; // Выбранный бот для будущего нового чата (появится после отправки сообщения)
+    let currentAttachment = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUser = localStorage.getItem('nexus_user') || sessionStorage.getItem('nexus_user');
+      const savedBots = localStorage.getItem('nexus_bots');
+      const savedChats = localStorage.getItem('nexus_chats');
+
+      if (savedBots) bots = JSON.parse(savedBots);
+      if (savedChats) chats = JSON.parse(savedChats);
+
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        initApp();
+      } else {
+        document.getElementById('authScreen').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('authForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('usernameInput').value.trim();
+      const remember = document.getElementById('rememberMeCheck').checked;
+
+      currentUser = { name: username };
+      if (remember) {
+        localStorage.setItem('nexus_user', JSON.stringify(currentUser));
+      } else {
+        sessionStorage.setItem('nexus_user', JSON.stringify(currentUser));
+      }
+      document.getElementById('authScreen').classList.add('hidden');
+      initApp();
+    });
+
+    function logout() {
+      localStorage.removeItem('nexus_user');
+      sessionStorage.removeItem('nexus_user');
+      location.reload();
+    }
+
+    function initApp() {
+      document.getElementById('appContainer').classList.remove('hidden');
+      document.getElementById('displayUsername').innerText = currentUser.name;
+      renderBots();
+      renderChats();
+    }
+
+    function saveData() {
+      localStorage.setItem('nexus_bots', JSON.stringify(bots));
+      localStorage.setItem('nexus_chats', JSON.stringify(chats));
+    }
+
+    function renderBots() {
+      const container = document.getElementById('botsList');
+      container.innerHTML = bots.map(b => `
+        <button onclick="selectBotForNewChat('${b.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl glass hover:bg-white/60 transition-all text-left group">
+          <div class="p-1.5 rounded-xl glass shadow-sm"><i class="fa-solid ${b.icon} ${b.color}"></i></div>
+          <div class="flex-1 truncate">
+            <span class="text-sm font-medium text-slate-700 block truncate">${b.name}</span>
+            <span class="text-[10px] text-slate-400 block">Новый диалог</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function renderChats() {
+      const container = document.getElementById('chatsList');
+      if (chats.length === 0) {
+        container.innerHTML = `<div class="px-2 py-3 text-xs text-slate-400 text-center italic">Нет истории</div>`;
+        return;
+      }
+      container.innerHTML = chats.map(c => `
+        <div onclick="openExistingChat('${c.id}')" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors cursor-pointer group border ${activeChatId === c.id ? 'glass border-white/90 shadow-sm font-medium text-slate-800' : 'border-transparent text-slate-600 hover:bg-white/40'}">
+          <i class="fa-regular fa-message text-xs ${activeChatId === c.id ? 'text-blue-500' : 'text-slate-400'}"></i>
+          <span class="truncate flex-1">${c.title}</span>
+          <button onclick="deleteChat(event, '${c.id}')" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
         </div>
-        <div class="nav-item">
-            <span style="font-size: 20px;">🎒</span>
-            <span>Инвентарь</span>
+      `).join('');
+    }
+
+    // Клик по боту — подготовка к новому чату (сам чат создастся только при первом сообщении)
+    function selectBotForNewChat(botId) {
+      currentSelectedBotId = botId;
+      activeChatId = null;
+      renderChats();
+
+      const bot = bots.find(b => b.id === botId) || bots[0];
+      document.getElementById('currentBotBadge').classList.remove('hidden');
+      document.getElementById('currentBotBadge').classList.add('flex');
+      document.getElementById('currentBotIcon').className = `fa-solid ${bot.icon} ${bot.color}`;
+      document.getElementById('currentBotName').innerText = bot.name + ' (Новый)';
+
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('inputAreaWrapper').classList.remove('hidden');
+      
+      document.getElementById('chatContent').innerHTML = `
+        <div class="text-center py-12 text-slate-400 text-sm animate-in fade-in">
+          Напишите первое сообщение, чтобы открыть чат с ботом <strong class="text-slate-600">${bot.name}</strong>...
         </div>
-    </nav>
+      `;
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
+      if (window.innerWidth < 768) toggleSidebar();
+    }
 
-        const user = tg.initDataUnsafe?.user;
+    function openExistingChat(id) {
+      activeChatId = id;
+      currentSelectedBotId = null;
+      renderChats();
+      const chat = chats.find(c => c.id === id);
+      if (!chat) return;
+
+      const bot = bots.find(b => b.id === chat.botId) || bots[0];
+      document.getElementById('currentBotBadge').classList.remove('hidden');
+      document.getElementById('currentBotBadge').classList.add('flex');
+      document.getElementById('currentBotIcon').className = `fa-solid ${bot.icon} ${bot.color}`;
+      document.getElementById('currentBotName').innerText = bot.name;
+
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('inputAreaWrapper').classList.remove('hidden');
+      renderMessages(chat);
+
+      if (window.innerWidth < 768) toggleSidebar();
+    }
+
+    function renderMessages(chat) {
+      const container = document.getElementById('chatContent');
+      if (chat.messages.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm">Пустой чат...</div>`;
+        return;
+      }
+      container.innerHTML = chat.messages.map(m => {
+        const isUser = m.role === 'user';
+        return `
+          <div class="flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300">
+            ${!isUser ? `<div class="w-8 h-8 rounded-full glass flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-robot text-blue-500 text-xs"></i></div>` : ''}
+            <div class="max-w-[80%] px-5 py-3.5 text-[15px] leading-relaxed rounded-3xl ${isUser ? 'bg-blue-500 text-white rounded-br-lg shadow-md' : 'glass-bubble text-slate-800 rounded-bl-lg'}">
+              ${m.attachment ? renderAttachmentContent(m.attachment) : ''}
+              <div class="whitespace-pre-wrap">${escapeHtml(m.content)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      scrollToBottom();
+    }
+
+    function renderAttachmentContent(att) {
+      if (att.type === 'image') {
+        return `<div class="mb-2"><img src="${att.data}" class="rounded-2xl max-h-60 object-cover border border-white/40"></div>`;
+      } else if (att.type === 'video') {
+        return `<div class="mb-2"><video src="${att.data}" controls class="rounded-2xl max-h-60 w-full"></video></div>`;
+      } else if (att.type === 'zip') {
+        return `<div class="mb-2 p-3 rounded-xl bg-black/5 border border-white/20 flex items-center gap-2"><i class="fa-regular fa-file-zipper text-amber-500 text-lg"></i><span class="text-xs font-medium truncate">${att.name}</span></div>`;
+      }
+      return '';
+    }
+
+    function deleteChat(e, id) {
+      e.stopPropagation();
+      chats = chats.filter(c => c.id !== id);
+      saveData();
+      renderChats();
+      if (activeChatId === id) {
+        activeChatId = null;
+        document.getElementById('currentBotBadge').classList.add('hidden');
+        document.getElementById('welcomeScreen').classList.remove('hidden');
+        document.getElementById('inputAreaWrapper').classList.add('hidden');
+      }
+    }
+
+    function clearAllChats() {
+      chats = [];
+      activeChatId = null;
+      currentSelectedBotId = null;
+      saveData();
+      renderChats();
+      document.getElementById('currentBotBadge').classList.add('hidden');
+      document.getElementById('welcomeScreen').classList.remove('hidden');
+      document.getElementById('inputAreaWrapper').classList.add('hidden');
+    }
+
+    // --- ОТПРАВКА СООБЩЕНИЙ И СОЗДАНИЕ ЧАТА ---
+    async function handleSendMessage(e) {
+      e?.preventDefault();
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if ((!text && !currentAttachment)) return;
+
+      // Если это новый чат (еще не сохранен в массив), создаем его прямо сейчас по первому сообщению
+      let chat;
+      if (!activeChatId) {
+        if (!currentSelectedBotId) currentSelectedBotId = bots[0].id;
         
-        if (user) {
-            document.getElementById('username').innerText = user.first_name;
-            document.getElementById('user-avatar').innerText = user.first_name.charAt(0).toUpperCase();
-        } else {
-            document.getElementById('username').innerText = 'Гость';
-            document.getElementById('user-avatar').innerText = 'Г';
+        chat = {
+          id: 'chat_' + Date.now(),
+          botId: currentSelectedBotId,
+          title: text ? (text.slice(0, 25) + (text.length > 25 ? '...' : '')) : 'Диалог',
+          messages: []
+        };
+        chats.unshift(chat);
+        activeChatId = chat.id;
+        currentSelectedBotId = null;
+        renderChats();
+      } else {
+        chat = chats.find(c => c.id === activeChatId);
+      }
+
+      const userMsg = { role: 'user', content: text, attachment: currentAttachment };
+      chat.messages.push(userMsg);
+
+      input.value = '';
+      input.style.height = 'auto';
+      clearAttachment();
+      saveData();
+      renderChats();
+      renderMessages(chat);
+
+      showTypingIndicator(chat);
+      const aiReply = await fetchGeminiResponse(chat);
+      removeTypingIndicator(chat);
+
+      chat.messages.push({ role: 'assistant', content: aiReply });
+      saveData();
+      renderMessages(chat);
+    }
+
+    async function fetchGeminiResponse(chat) {
+      const bot = bots.find(b => b.id === chat.botId) || bots[0];
+      const history = chat.messages.map(m => `${m.role === 'user' ? 'User' : bot.name}: ${m.content}`).join('\n');
+      const prompt = `${history}\n${bot.name}:`;
+
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: bot.prompt }] }
+      };
+
+      for (let i = 0; i < 4; i++) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          return data.candidates?.[0]?.content?.parts?.[0]?.text || "Пустой ответ от нейросети.";
+        } catch (err) {
+          if (i === 3) return "Ошибка соединения с сервером.";
+          await new Promise(r => setTimeout(r, 2000));
         }
+      }
+    }
 
-        // ==========================================
-        // НАСТРОЙКА СВЯЗИ С TERMUX
-        // ==========================================
+    function showTypingIndicator(chat) {
+      const container = document.getElementById('chatContent');
+      const bot = bots.find(b => b.id === chat.botId) || bots[0];
+      const div = document.createElement('div');
+      div.id = 'typingIndicator';
+      div.className = 'flex gap-4 justify-start animate-in fade-in';
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-full glass flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid ${bot.icon} ${bot.color} text-xs"></i></div>
+        <div class="glass-bubble px-5 py-4 rounded-3xl rounded-bl-lg flex items-center gap-1.5">
+          <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+          <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.15s]"></div>
+          <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:0.3s]"></div>
+        </div>
+      `;
+      container.appendChild(div);
+      scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+      const el = document.getElementById('typingIndicator');
+      if (el) el.remove();
+    }
+
+    // --- МЕДИА ФАЙЛЫ ---
+    function toggleMediaMenu(e) {
+      e.stopPropagation();
+      const menu = document.getElementById('mediaMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    window.addEventListener('click', () => {
+      document.getElementById('mediaMenu').classList.add('hidden');
+    });
+
+    function handleFileAttach(e, type) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(uploadEvent) {
+        currentAttachment = { type: type, name: file.name, data: uploadEvent.target.result };
         
-        // ВСТАВЬ СВОЮ HTTPS ССЫЛКУ ИЗ PINGGY НИЖЕ ВМЕСТО ПРИМЕРА
-        const backendUrl = "https://shkjm-91-225-4-163.run.pinggy-free.link"; 
-        
-        const userId = user ? user.id : 7128871752;
+        const preview = document.getElementById('filePreviewBox');
+        preview.classList.remove('hidden');
+        document.getElementById('previewName').innerText = file.name;
+        document.getElementById('previewIcon').className = type === 'image' ? 'fa-regular fa-image text-blue-500' : type === 'video' ? 'fa-solid fa-video text-purple-500' : 'fa-regular fa-file-zipper text-amber-500';
+      };
+      reader.readAsDataURL(file);
+    }
 
-        // Запрашиваем баланс с сервера
-        fetch(`${backendUrl}/api/balance/${userId}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Сервер не ответил");
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('balance-amount').innerText = data.balance.toFixed(2);
-            })
-            .catch(error => {
-                console.error("Ошибка связи:", error);
-                document.getElementById('balance-amount').innerText = "Ошибка";
-            });
+    function clearAttachment() {
+      currentAttachment = null;
+      document.getElementById('filePreviewBox').classList.add('hidden');
+      document.getElementById('imageInput').value = '';
+      document.getElementById('videoInput').value = '';
+      document.getElementById('zipInput').value = '';
+    }
 
-        function openGame(gameName) {
-            tg.HapticFeedback.impactOccurred('light');
-            tg.showAlert('Запуск: ' + gameName);
-        }
-    </script>
+    // --- БОТЫ МОДАЛКА ---
+    function openBotModal() { document.getElementById('botModal').classList.remove('hidden'); }
+    function closeBotModal() { document.getElementById('botModal').classList.add('hidden'); }
+
+    function saveNewBot(e) {
+      e.preventDefault();
+      const name = document.getElementById('newBotName').value.trim();
+      const prompt = document.getElementById('newBotPrompt').value.trim();
+
+      const newBot = {
+        id: 'bot_' + Date.now(),
+        name: name,
+        icon: 'fa-robot',
+        color: 'text-emerald-500',
+        prompt: prompt
+      };
+
+      bots.push(newBot);
+      saveData();
+      renderBots();
+      closeBotModal();
+      document.getElementById('newBotName').value = '';
+      document.getElementById('newBotPrompt').value = '';
+      selectBotForNewChat(newBot.id);
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      sb.classList.toggle('-translate-x-full');
+      ov.classList.toggle('hidden');
+    }
+
+    function scrollToBottom() {
+      const area = document.getElementById('chatScrollArea');
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function handleKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
 </body>
 </html>
-
